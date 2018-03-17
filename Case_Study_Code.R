@@ -11,6 +11,7 @@ library(randomForest)
 library(ggplot2)
 library(reshape2)
 library(corrplot)
+library(qwraps2)
 
 # https://www.r-bloggers.com/identify-describe-plot-and-remove-the-outliers-from-the-dataset/
 outlierKD <- function(dt, var) {
@@ -46,12 +47,12 @@ outlierKD <- function(dt, var) {
 }
 
 # Load data
-ru <- read.xlsx("CollatedPneumoconiosisData-GE Internal.xlsx", 1, header = TRUE, colClasses = NA)
-rm <- read.xlsx("CollatedPneumoconiosisData-GE Internal.xlsx", 2, header = TRUE, colClasses = NA)
-rl <- read.xlsx("CollatedPneumoconiosisData-GE Internal.xlsx", 3, header = TRUE, colClasses = NA)
-lu <- read.xlsx("CollatedPneumoconiosisData-GE Internal.xlsx", 4, header = TRUE, colClasses = NA)
-lm <- read.xlsx("CollatedPneumoconiosisData-GE Internal.xlsx", 5, header = TRUE, colClasses = NA)
-ll <- read.xlsx("CollatedPneumoconiosisData-GE Internal.xlsx", 6, header = TRUE, colClasses = NA)
+ru <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 1, header = TRUE, colClasses = NA)
+rm <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 2, header = TRUE, colClasses = NA)
+rl <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 3, header = TRUE, colClasses = NA)
+lu <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 4, header = TRUE, colClasses = NA)
+lm <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 5, header = TRUE, colClasses = NA)
+ll <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 6, header = TRUE, colClasses = NA)
 
 ru$Position <- "RightUpper"
 rm$Position <- "RightMiddle"
@@ -60,22 +61,11 @@ lu$Position <- "LeftUpper"
 lm$Position <- "LeftMiddle"
 ll$Position <- "LeftLower"
 
+# Combine all sections into one dataframe
 full <- rbind(ru, rm, rl, lu, lm, ll)
-
-###############################################################################
-# Random Forest - LOOCV  91.55 Acc 0.8111 Kappa
-# https://machinelearningmastery.com/tune-machine-learning-algorithms-in-r/
-# https://www.analyticsvidhya.com/blog/2016/12/practical-guide-to-implement-machine-learning-with-caret-package-in-r-with-practice-problem/
-###############################################################################
-
-# Review the dataset
-summary(full)
 
 # Set levels of the factor - makes it easier to read
 full$Label2 <- ifelse(full$Label == 0, 'Normal', 'Abnormal')
-
-
-
 
 # Prepare data set
 use_data <- full %>%
@@ -83,6 +73,40 @@ use_data <- full %>%
         mutate(Position = factor(Position)) %>% 
         select(-PatientNumMasked, -Label)
 
+# Check scatter plots of continuous variables
+panel.cor <- function(x, y, digits = 2, cex.cor, ...)
+{
+        usr <- par("usr"); on.exit(par(usr))
+        par(usr = c(0, 1, 0, 1))
+        # correlation coefficient
+        r <- cor(x, y)
+        txt <- format(c(r, 0.123456789), digits = digits)[1]
+        txt <- paste("r= ", txt, sep = "")
+        text(0.5, 0.6, txt)
+        
+        # p-value calculation
+        p <- cor.test(x, y)$p.value
+        txt2 <- format(c(p, 0.123456789), digits = digits)[1]
+        txt2 <- paste("p= ", txt2, sep = "")
+        if(p<0.01) txt2 <- paste("p= ", "<0.01", sep = "")
+        text(0.5, 0.4, txt2)
+}
+
+graphics.off()
+par(mar = c(1,1,1,1))
+pairs(use_data[-c(10:41)], upper.panel = panel.cor)
+
+# Summary 
+options(qwraps2_markup = "markdown")
+col<-seq(1, ncol(use_data), by = 1)
+mysummary <- mapply(tab_summary, use_data[,col])
+summary_table(dplyr::group_by(use_data, Position), mysummary)
+
+# Scatter plot between predictors; scatter plot for response is pointless since it is categorical
+
+library(lattice)
+splom(use_data, groups = Position)
+pairs(Label2 ~ ., data = use_data[c(1,41)])
 
 # Check for outliers
 for(var in 1:length(use_data[-c(40, 41)])) {
@@ -122,6 +146,13 @@ fitControl <- trainControl(method = "repeatedcv"
                            ,repeats = 5
                            ,summaryFunction = twoClassSummary
                            ,classProbs = TRUE)
+
+###############################################################################
+# Random Forest - LOOCV  91.55 Acc 0.8111 Kappa
+# https://machinelearningmastery.com/tune-machine-learning-algorithms-in-r/
+# https://www.analyticsvidhya.com/blog/2016/12/practical-guide-to-implement-machine-learning-with-caret-package-in-r-with-practice-problem/
+###############################################################################
+
 
 rf <- train(Label2 ~.
             ,data = trainData
@@ -258,8 +289,15 @@ checkLabel %>%
 
 
 
-
+#############junk
 male = data.frame(c(127,44,28,83,0,6,78,6,5,213,73,20,214,28,11)) # data from page 66
 ggplot(data = male, aes(x = "male", y = male)) + 
         geom_boxplot() +
         coord_cartesian(ylim = c(0, 150))
+
+
+lapply(use_data, seq(1:39), tab_summary)
+
+
+
+

@@ -1,0 +1,76 @@
+---
+title: "GE Case Study Document"
+author: "Eric Gero (eric.gero@ge.com)"
+date: "3/16/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r includes, include=FALSE}
+setwd("~/Documents/R_Projects/GE_Case_Study")
+
+# Load libraries
+library(xlsx)
+library(dplyr)
+library(caret)
+library(randomForest)
+library(ggplot2)
+library(reshape2)
+library(corrplot)
+library(qwraps2)
+```
+
+```{r data_prep, include=FALSE}
+# Load data
+ru <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 1, header = TRUE, colClasses = NA)
+rm <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 2, header = TRUE, colClasses = NA)
+rl <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 3, header = TRUE, colClasses = NA)
+lu <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 4, header = TRUE, colClasses = NA)
+lm <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 5, header = TRUE, colClasses = NA)
+ll <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 6, header = TRUE, colClasses = NA)
+
+ru$Position <- "RightUpper"
+rm$Position <- "RightMiddle"
+rl$Position <- "RightLower"
+lu$Position <- "LeftUpper"
+lm$Position <- "LeftMiddle"
+ll$Position <- "LeftLower"
+
+# Combine all sections into one dataframe
+full <- rbind(ru, rm, rl, lu, lm, ll)
+
+# Set levels of the factor - makes it easier to read
+full$Label2 <- ifelse(full$Label == 0, 'Normal', 'Abnormal')
+
+# Prepare data set
+use_data <- full %>%
+        mutate(Label2 = factor(Label2)) %>%
+        mutate(Position = factor(Position)) %>% 
+        select(-PatientNumMasked, -Label)
+```
+
+```{r summaries, include=FALSE}
+# Summary 
+options(qwraps2_markup = "markdown")
+col<-seq(1, ncol(use_data), by = 1)
+mysummary <- mapply(tab_summary, use_data[,col])
+summary_table(dplyr::group_by(use_data, Position), mysummary)
+```
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
