@@ -2,23 +2,49 @@
 title: "GE Case Study Document"
 author: "Eric Gero (eric.gero@ge.com)"
 date: "3/16/2018"
-output: html_document
+header-includes:
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{array}
+  - \usepackage{multirow}
+  - \usepackage[table]{xcolor}
+  - \usepackage{wrapfig}
+  - \usepackage{float}
+  - \usepackage{colortbl}
+  - \usepackage{pdflscape}
+  - \usepackage{tabu}
+  - \usepackage{threeparttable}
+  - \usepackage[normalem]{ulem}
+output:
+  pdf_document: 
+        toc: true
+  word_document: default
+  html_document: 
+        toc: true
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r setup, set-options, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE,
+               cache=TRUE, autodep=TRUE, cache.comments=FALSE,
+               message=FALSE, warning=FALSE, tidy = FALSE)
+options(width = 400, kableExtra.latex.load_packages = FALSE, knitr.table.format = "latex")
 ```
 
-## R Markdown
+## Introduction and Problem Statement
+
+
 
 This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
+## Data
+
 ```{r includes, include=FALSE}
 setwd("~/Documents/R_Projects/GE_Case_Study")
 
 # Load libraries
+library(knitr)
 library(xlsx)
 library(dplyr)
 library(caret)
@@ -26,7 +52,10 @@ library(randomForest)
 library(ggplot2)
 library(reshape2)
 library(corrplot)
-library(qwraps2)
+library(fBasics)
+library(rpart)
+library(rpart.plot)
+library(kableExtra)
 ```
 
 ```{r data_prep, include=FALSE}
@@ -58,19 +87,65 @@ use_data <- full %>%
         select(-PatientNumMasked, -Label)
 ```
 
-```{r summaries, include=FALSE}
-# Summary 
-options(qwraps2_markup = "markdown")
-col<-seq(1, ncol(use_data), by = 1)
-mysummary <- mapply(tab_summary, use_data[,col])
-summary_table(dplyr::group_by(use_data, Position), mysummary)
+## Exploratory Data Analysis
+
+
+
+## Naive Model and Variable Importance
+Ok, now we talk about naive model and what we are looking at. 
+
+```{r naive_model, echo = FALSE, comment = NA}
+
+# Create training and test datasets
+trainIndex <- createDataPartition(use_data$Label2, p = 0.7, list = FALSE)
+trainData <- use_data[trainIndex,]
+testData <- use_data[-trainIndex,]
+
+tree <- rpart(Label2 ~., data = trainData)
+rpart.plot(tree)
+
 ```
-## Including Plots
+
+The model... I dont understand why it moves the image  
+
+```{r naive_cm, echo = FALSE, , comment = NA}
+
+tree.pred <- predict(tree, testData, type = 'class')
+tree.cm <- confusionMatrix(tree.pred, testData$Label2, positive = 'Normal')
+
+kable(tree.cm$table, caption = "Confusion Matrix", booktabs = TRUE) %>% 
+        kable_styling(font_size = 8, position = 'float_right', latex_options = c("striped", "hold_position"))
+
+kable(tree.cm$overall, booktabs = TRUE, col.names = 'Value') %>% 
+        kable_styling(font_size = 8, position = 'float_right', latex_options = c("striped", "hold_position"))
+
+kable(as.data.frame(tree.cm$byClass), booktabs = TRUE, col.names = 'Value') %>% 
+        kable_styling(font_size = 8, position = 'float_right', latex_options = c("striped", "hold_position"))
+
+```
+
+## Models
+
+Not sure why there is nothing here.  
+
+## Conclusion  
+
+Not sure why there is nothing here.  
+
+## Appendix A - Summary Statistics for Predictors  
+
+Not sure why there is nothing here.  
+
+```{r summaries, echo = FALSE, comment = NA}
+
+stats <- basicStats(use_data[-c(40,41)])[c('Mean', 'Median', 'Stdev', 'Minimum', 'Maximum', 'NAs'),]
+
+kable(round(t(stats), 2), booktabs = TRUE) %>% 
+        kable_styling(font_size = 8, latex_options = c('striped', 'scale_down', 'hold_position'))
+
+```
 
 You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

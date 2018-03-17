@@ -11,7 +11,9 @@ library(randomForest)
 library(ggplot2)
 library(reshape2)
 library(corrplot)
-library(qwraps2)
+library(fBasics)
+library(rpart)
+library(rpart.plot)
 
 # https://www.r-bloggers.com/identify-describe-plot-and-remove-the-outliers-from-the-dataset/
 outlierKD <- function(dt, var) {
@@ -46,6 +48,10 @@ outlierKD <- function(dt, var) {
         }
 }
 
+###############################################################################
+# Load data and prepare dataset
+###############################################################################
+
 # Load data
 ru <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 1, header = TRUE, colClasses = NA)
 rm <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 2, header = TRUE, colClasses = NA)
@@ -73,6 +79,15 @@ use_data <- full %>%
         mutate(Position = factor(Position)) %>% 
         select(-PatientNumMasked, -Label)
 
+# Create training and test datasets
+trainIndex <- createDataPartition(use_data$Label2, p = 0.7, list = FALSE)
+trainData <- use_data[trainIndex,]
+testData <- use_data[-trainIndex,]
+
+###############################################################################
+# Exploratory Data Analysis
+###############################################################################
+
 # Check scatter plots of continuous variables
 panel.cor <- function(x, y, digits = 2, cex.cor, ...)
 {
@@ -97,6 +112,9 @@ par(mar = c(1,1,1,1))
 pairs(use_data[-c(10:41)], upper.panel = panel.cor)
 
 # Summary 
+
+stats <- basicStats(use_data[-c(40,41)])[c("Mean", "Median", "Stdev", "Minimum", "Maximum", "NAs"),]
+t(round(stats, 2))
 options(qwraps2_markup = "markdown")
 col<-seq(1, ncol(use_data), by = 1)
 mysummary <- mapply(tab_summary, use_data[,col])
@@ -120,6 +138,17 @@ for(var in 1:length(use_data[-c(40, 41)])) {
         #boxplot(use_data[var], main = colnames(use_data[var]))
 }
 
+###############################################################################
+# Exploratory Model and Important Variables
+###############################################################################
+
+
+tree <- rpart(Label2 ~., data = trainData)
+rpart.plot(tree)
+tree.pred <- predict(tree, testData, type = 'class')
+
+cm <- confusionMatrix(tree.pred, testData$Label2, positive = 'Normal')
+
 scaled <- scale(use_data[-c(40,41)])
 for(var in 1:length(use_data[-c(40, 41)])) {
         
@@ -135,10 +164,7 @@ summary(use_data)
 corr <- cor(use_data[-c(40,41)])
 corrplot(corr, type = "upper", tl.cex = 0.5, tl.col = "blue", tl.srt = 45)
 
-# Create training and test datasets
-trainIndex <- createDataPartition(use_data$Label2, p = 0.7, list = FALSE)
-trainData <- use_data[trainIndex,]
-testData <- use_data[-trainIndex,]
+
 
 # Set up training conditions - must use LOOCV
 fitControl <- trainControl(method = "repeatedcv"
