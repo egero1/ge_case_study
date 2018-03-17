@@ -1,0 +1,265 @@
+## Eric Gero
+## eric.gero@ge.com
+
+setwd("~/Desktop/Case Study")
+
+# Load libraries
+library(xlsx)
+library(dplyr)
+library(caret)
+library(randomForest)
+library(ggplot2)
+library(reshape2)
+library(corrplot)
+
+# https://www.r-bloggers.com/identify-describe-plot-and-remove-the-outliers-from-the-dataset/
+outlierKD <- function(dt, var) {
+        var_name <- eval(substitute(var),eval(dt))
+        na1 <- sum(is.na(var_name))
+        m1 <- mean(var_name, na.rm = T)
+        par(mfrow=c(2, 2), oma=c(0,0,3,0))
+        boxplot(var_name, main="With outliers")
+        hist(var_name, main="With outliers", xlab=NA, ylab=NA)
+        outlier <- boxplot.stats(var_name)$out
+        mo <- mean(outlier)
+        var_name <- ifelse(var_name %in% outlier, NA, var_name)
+        boxplot(var_name, main="Without outliers")
+        hist(var_name, main="Without outliers", xlab=NA, ylab=NA)
+        title("Outlier Check", outer=TRUE)
+        na2 <- sum(is.na(var_name))
+        cat("Outliers identified:", na2 - na1, "n")
+        cat("Propotion (%) of outliers:", round((na2 - na1) / sum(!is.na(var_name))*100, 1), "n")
+        cat("Mean of the outliers:", round(mo, 2), "n")
+        m2 <- mean(var_name, na.rm = T)
+        cat("Mean without removing outliers:", round(m1, 2), "n")
+        cat("Mean if we remove outliers:", round(m2, 2), "n")
+        response <- readline(prompt="Do you want to remove outliers and to replace with NA? [yes/no]: ")
+        if(response == "y" | response == "yes"){
+                dt[as.character(substitute(var))] <- invisible(var_name)
+                assign(as.character(as.list(match.call())$dt), dt, envir = .GlobalEnv)
+                cat("Outliers successfully removed", "n")
+                return(invisible(dt))
+        } else{
+                cat("Nothing changed", "n")
+                return(invisible(var_name))
+        }
+}
+
+# Load data
+ru <- read.xlsx("CollatedPneumoconiosisData-GE Internal.xlsx", 1, header = TRUE, colClasses = NA)
+rm <- read.xlsx("CollatedPneumoconiosisData-GE Internal.xlsx", 2, header = TRUE, colClasses = NA)
+rl <- read.xlsx("CollatedPneumoconiosisData-GE Internal.xlsx", 3, header = TRUE, colClasses = NA)
+lu <- read.xlsx("CollatedPneumoconiosisData-GE Internal.xlsx", 4, header = TRUE, colClasses = NA)
+lm <- read.xlsx("CollatedPneumoconiosisData-GE Internal.xlsx", 5, header = TRUE, colClasses = NA)
+ll <- read.xlsx("CollatedPneumoconiosisData-GE Internal.xlsx", 6, header = TRUE, colClasses = NA)
+
+ru$Position <- "RightUpper"
+rm$Position <- "RightMiddle"
+rl$Position <- "RightLower"
+lu$Position <- "LeftUpper"
+lm$Position <- "LeftMiddle"
+ll$Position <- "LeftLower"
+
+full <- rbind(ru, rm, rl, lu, lm, ll)
+
+###############################################################################
+# Random Forest - LOOCV  91.55 Acc 0.8111 Kappa
+# https://machinelearningmastery.com/tune-machine-learning-algorithms-in-r/
+# https://www.analyticsvidhya.com/blog/2016/12/practical-guide-to-implement-machine-learning-with-caret-package-in-r-with-practice-problem/
+###############################################################################
+
+# Review the dataset
+summary(full)
+
+# Set levels of the factor - makes it easier to read
+full$Label2 <- ifelse(full$Label == 0, 'Normal', 'Abnormal')
+
+
+
+
+# Prepare data set
+use_data <- full %>%
+        mutate(Label2 = factor(Label2)) %>%
+        mutate(Position = factor(Position)) %>% 
+        select(-PatientNumMasked, -Label)
+
+
+# Check for outliers
+for(var in 1:length(use_data[-c(40, 41)])) {
+        #variable <- use_data[var]
+        #colnames(variable) <- colnames(use_data[var])
+        p <- ggplot(data = use_data, aes(x = "", y = use_data[var])) + 
+                geom_boxplot(color="red", fill="orange", alpha=0.2) +
+                labs(title = paste("Outliers - ", colnames(use_data[var])))
+        coord_cartesian(ylim = c(min(use_data[var]), max(use_data[var])))
+        print(p)
+        #boxplot(use_data[var], main = colnames(use_data[var]))
+}
+
+scaled <- scale(use_data[-c(40,41)])
+for(var in 1:length(use_data[-c(40, 41)])) {
+        
+        boxplot(scaled[var], main = colnames(scaled[var]))
+}
+scaled <- scale(use_data[-c(40,41)])
+outlierKD(use_data, Hist_0_0_0_Mean)
+
+# Review the dataset
+summary(use_data)
+
+# Correlation plot
+corr <- cor(use_data[-c(40,41)])
+corrplot(corr, type = "upper", tl.cex = 0.5, tl.col = "blue", tl.srt = 45)
+
+# Create training and test datasets
+trainIndex <- createDataPartition(use_data$Label2, p = 0.7, list = FALSE)
+trainData <- use_data[trainIndex,]
+testData <- use_data[-trainIndex,]
+
+# Set up training conditions - must use LOOCV
+fitControl <- trainControl(method = "repeatedcv"
+                           ,number = 1
+                           ,repeats = 5
+                           ,summaryFunction = twoClassSummary
+                           ,classProbs = TRUE)
+
+rf <- train(Label2 ~.
+            ,data = trainData
+            ,method = 'rf'
+            ,trControl = fitControl
+            ,metric = "ROC"
+            ,preProc = c("center", "scale"))
+
+saveRDS(rf, "random_forest.rds")
+varImp(rf)
+#varImpPlot(rf$finalModel)
+
+imp <- as.data.frame(rf$finalModel$importance)
+
+ggplot(imp, aes(x = reorder(rownames(imp), MeanDecreaseGini), MeanDecreaseGini)) +
+        geom_bar(stat = "identity", aes(fill = rownames(imp))) + 
+        coord_flip() + 
+        guides(fill=FALSE) + 
+        ggtitle("Random Forest Variable Importance - Hospital Type") +
+        xlab("Variables") +
+        ylab("Mean Decrease Gini")
+
+
+rf_pred_test <- predict(rf, testData)
+
+confusionMatrix(rf_pred_test, testData$Label2)
+
+
+###############################################################################
+# GLM - LOOCV
+# http://www.rebeccabarter.com/blog/2017-11-17-caret_tutorial/
+# https://www.analyticsvidhya.com/blog/2016/12/practical-guide-to-implement-machine-learning-with-caret-package-in-r-with-practice-problem/
+# https://www.analyticsvidhya.com/blog/2016/12/practical-guide-to-implement-machine-learning-with-caret-package-in-r-with-practice-problem/
+###############################################################################
+
+# Set up training conditions - must use LOOCV
+fitControl <- trainControl(method = "repeatedcv"
+                           ,number = 1
+                           ,repeats = 5
+                           ,returnResamp="none"
+                           ,classProbs = TRUE
+                           ,savePredictions = 'final')
+
+glm <- train(Label2 ~.
+             ,data = trainData
+             ,family = "binomial"
+             ,method = 'glm'
+             ,trControl = fitControl
+             ,metric = "ROC")
+
+glm_pred_test <- predict(glm, testData)
+
+confusionMatrix(glm_pred_test, testData$Label, mode = 'everything', positive = '1')
+
+###############################################################################
+# GLM - LOOCV  need to implement LOOCV
+# https://gerardnico.com/lang/r/cross_validation
+# https://rpubs.com/maulikpatel/226237
+# http://www.rebeccabarter.com/blog/2017-11-17-caret_tutorial/
+# https://www.analyticsvidhya.com/blog/2016/12/practical-guide-to-implement-machine-learning-with-caret-package-in-r-with-practice-problem/
+###############################################################################
+
+library(glm)
+library(boot)
+
+glm.fit <- glm(Label2 ~., data = trainData, family = binomial)
+cv <- cv.glm(trainData, glm.fit)
+#cv.glm(trainData, glm.fit)$delta
+glm.fit.probs <- predict(glm.fit, testData, type = "response")
+glm.pred <- rep("Abnormal", 781)
+glm.pred[glm.fit.probs > .5] = "Normal"
+
+
+#####################################################################################
+glm.results <- matrix(NA, nrow = dim(use_data)[1], ncol = 2)
+for(row in 1:dim(use_data[1])) {
+        glmFit <- glm(Label2 ~ ., data = use_data[-row,], family = binomial)
+        glmFit.response <- predict(glmFit, use_data[row,], type = "response")
+        glm.results[row,] <- c(row, glmFit.response)
+}
+glm.pred <- rep("Abnormal", dim(use_data)[1])
+glm.pred[results[,2] > .5] = "Normal"
+finalResults <- as.data.frame(cbind(glm.results, full$PatientNumMasked, glm.pred, full$Label2))
+
+confusionMatrix(finalResults$glm.pred, finalResults$V5)
+
+
+# https://www.r-bloggers.com/random-forests-in-r/
+rf.results <- matrix(NA, nrow = dim(use_data)[1], ncol = 2)
+for(row in 1:dim(use_data[1])) {
+        rfFit <- randomForest(Label2 ~ ., data = use_data[-row,])
+        rfFit.response <- predict(rfFit, use_data[row,], type = "response")
+        rf.results[row,] <- c(row, rfFit.response)
+}
+
+plot(rfFit)
+
+rf.pred <- rep("Abnormal", dim(use_data)[1])
+rf.pred[rf.results[,2] == 2] = "Normal"
+rf.finalResults <- as.data.frame(cbind(rf.results, full$PatientNumMasked, rf.pred, full$Label2))
+
+confusionMatrix(rf.finalResults$rf.pred, rf.finalResults$V5)
+
+# https://www.r-bloggers.com/random-forests-in-r/
+rf.results2 <- matrix(NA, nrow = 20, ncol = 2)
+for(row in 1:20) {
+        rfFit <- randomForest(Label2 ~ ., data = use_data[-row,])
+        rfFit.response <- predict(rfFit, use_data[row,], type = "raw")
+        rf.results2[row,] <- c(row, rfFit.response)
+}
+
+
+# set up data
+# create loop
+# remove 1 row (x1, y1)
+# fit model
+# predict based on model
+# loop until done
+
+# noticed in the data that not all quadrants have values for each patient
+
+# Verify that all labels for patients are the same
+checkLabel <- full %>%
+        group_by(PatientNumMasked) %>%
+        mutate(minLabel = min(Label)) %>%
+        mutate(maxLabel = max(Label)) %>%
+        mutate(count = length(PatientNumMasked)) %>%
+        select(PatientNumMasked, minLabel, maxLabel, count) 
+
+# If the min and max are equal, they will be dropped.  If list is empty
+# then the label is consistent across data sets for all patients
+checkLabel %>%
+        filter(minLabel != maxLabel)
+
+
+
+
+male = data.frame(c(127,44,28,83,0,6,78,6,5,213,73,20,214,28,11)) # data from page 66
+ggplot(data = male, aes(x = "male", y = male)) + 
+        geom_boxplot() +
+        coord_cartesian(ylim = c(0, 150))
