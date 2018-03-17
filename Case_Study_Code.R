@@ -1,7 +1,7 @@
 ## Eric Gero
 ## eric.gero@ge.com
 
-setwd("~/Desktop/Case Study")
+setwd("~/Documents/R_Projects/GE_Case_Study")
 
 # Load libraries
 library(xlsx)
