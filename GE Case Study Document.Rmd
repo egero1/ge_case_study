@@ -1,5 +1,5 @@
 ---
-title: "GE Case Study Document"
+title: "GE Case Study: Detecting Pneumoconiosis"
 author: "Eric Gero (eric.gero@ge.com)"
 date: "3/16/2018"
 header-includes:
@@ -24,23 +24,15 @@ output:
 ---
 
 ```{r setup, set-options, include=FALSE}
+
 knitr::opts_chunk$set(echo=FALSE,
                cache=TRUE, autodep=TRUE, cache.comments=FALSE,
                message=FALSE, warning=FALSE, tidy = FALSE)
 options(width = 400, kableExtra.latex.load_packages = FALSE, knitr.table.format = "latex")
+
 ```
 
-## Introduction and Problem Statement
-
-
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-## Data
-
-```{r includes, include=FALSE}
+```{r includes, include = FALSE}
 setwd("~/Documents/R_Projects/GE_Case_Study")
 
 # Load libraries
@@ -58,7 +50,8 @@ library(rpart.plot)
 library(kableExtra)
 ```
 
-```{r data_prep, include=FALSE}
+```{r data_prep, include = FALSE}
+
 # Load data
 ru <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 1, header = TRUE, colClasses = NA)
 rm <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 2, header = TRUE, colClasses = NA)
@@ -85,10 +78,36 @@ use_data <- full %>%
         mutate(Label2 = factor(Label2)) %>%
         mutate(Position = factor(Position)) %>% 
         select(-PatientNumMasked, -Label)
+
+```
+
+## Introduction and Problem Statement
+
+
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+## Data
+
+The data consists of 2,606 observations and is split between six lung segments. The six segments represent the right upper, right middle, right lower, left upper, left middle, and left lower regions of the lung images. Each segment contains 39 continuous variables and one categorical variable as the response. 
+
+```{r data, echo = FALSE}
+
+observations <- use_data %>% 
+        group_by(Position) %>%
+        summarize(Count = n())
+observations$Position <- as.character(observations$Position)
+observations <- rbind(observations, c('Total', sum(observations$Count)))
+kable(observations, caption = "Lung Segment Observations", booktabs = TRUE) %>% 
+        kable_styling(font_size = 8, position = 'float_right', latex_options = c("striped"))
+
 ```
 
 ## Exploratory Data Analysis
 
+The text for EDA goes here
 
 
 ## Naive Model and Variable Importance
@@ -96,12 +115,7 @@ Ok, now we talk about naive model and what we are looking at.
 
 ```{r naive_model, echo = FALSE, comment = NA}
 
-# Create training and test datasets
-trainIndex <- createDataPartition(use_data$Label2, p = 0.7, list = FALSE)
-trainData <- use_data[trainIndex,]
-testData <- use_data[-trainIndex,]
-
-tree <- rpart(Label2 ~., data = trainData)
+tree <- rpart(Label2 ~., data = use_data)
 rpart.plot(tree)
 
 ```
@@ -110,8 +124,8 @@ The model... I dont understand why it moves the image
 
 ```{r naive_cm, echo = FALSE, , comment = NA}
 
-tree.pred <- predict(tree, testData, type = 'class')
-tree.cm <- confusionMatrix(tree.pred, testData$Label2, positive = 'Normal')
+tree.pred <- predict(tree, use_data, type = 'class')
+tree.cm <- confusionMatrix(tree.pred, use_data$Label2, positive = 'Normal')
 
 kable(tree.cm$table, caption = "Confusion Matrix", booktabs = TRUE) %>% 
         kable_styling(font_size = 8, position = 'float_right', latex_options = c("striped", "hold_position"))

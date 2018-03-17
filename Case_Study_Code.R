@@ -60,12 +60,12 @@ lu <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 4, header = 
 lm <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 5, header = TRUE, colClasses = NA)
 ll <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 6, header = TRUE, colClasses = NA)
 
-ru$Position <- "RightUpper"
-rm$Position <- "RightMiddle"
-rl$Position <- "RightLower"
-lu$Position <- "LeftUpper"
-lm$Position <- "LeftMiddle"
-ll$Position <- "LeftLower"
+ru$Position <- "Right Upper"
+rm$Position <- "Right Middle"
+rl$Position <- "Right Lower"
+lu$Position <- "Left Upper"
+lm$Position <- "Left Middle"
+ll$Position <- "Left Lower"
 
 # Combine all sections into one dataframe
 full <- rbind(ru, rm, rl, lu, lm, ll)
@@ -84,9 +84,16 @@ trainIndex <- createDataPartition(use_data$Label2, p = 0.7, list = FALSE)
 trainData <- use_data[trainIndex,]
 testData <- use_data[-trainIndex,]
 
+
 ###############################################################################
 # Exploratory Data Analysis
 ###############################################################################
+
+observations <- use_data %>% 
+        group_by(Position) %>%
+        summarize(Count = n())
+observations$Position <- as.character(observations$Position)
+observations <- rbind(observations, c('Total', sum(observations$Count)))
 
 # Check scatter plots of continuous variables
 panel.cor <- function(x, y, digits = 2, cex.cor, ...)
@@ -326,4 +333,13 @@ lapply(use_data, seq(1:39), tab_summary)
 
 
 
+
+        
+rbind(observations, 'Total' = sum(observations$Count))
+
+
+
+lung_segment <- c('Right Upper', 'Right Middle', 'Right Lower', 'Left Upper', 'Left Middle', 'Left Lower', 'Total')
+observations <- c(397, 470, 446, 392, 467, 434, 2606)
+data_table <- data.frame(lung_segment, observations)
 
