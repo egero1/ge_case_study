@@ -89,6 +89,10 @@ testData <- use_data[-trainIndex,]
 # Exploratory Data Analysis
 ###############################################################################
 
+# Count of individual patients
+length(unique(full$PatientNumMasked))
+
+# Count of observations by segment
 observations <- use_data %>% 
         group_by(Position) %>%
         summarize(Count = n())
@@ -343,3 +347,4 @@ lung_segment <- c('Right Upper', 'Right Middle', 'Right Lower', 'Left Upper', 'L
 observations <- c(397, 470, 446, 392, 467, 434, 2606)
 data_table <- data.frame(lung_segment, observations)
 
+length(unique(full$PatientNumMasked))

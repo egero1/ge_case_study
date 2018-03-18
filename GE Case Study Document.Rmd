@@ -83,15 +83,29 @@ use_data <- full %>%
 
 ## Introduction and Problem Statement
 
+Pneumoconiosis, also known as "black lung disease", is an occupational lung disease caused by dusts that are breathed in and then deposited deep in the lungs causing damage (American Lung Association, 2018). It is often found in employees working in the mining or agricultural industries. There is no cure for Pneumoconiosis, so early detection is vital for proper treatment. 
 
+Traditionally, Pneumoconiosis is detected by having trained medical personnel review chest x-rays for abnormalities. However, due to the lack of trained doctors and the large number of patients waiting to be screened, a reliable and automated process for early detection has been requested.
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+ __Figure 1__ provides an example image of a patient with signs of Pneumoconiosis. An algorithm has been developed to identify the abnormalities in the lungs that are visible in the x-ray images and the data has been collected. 
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+```{r image, out.width = '250px', fig.cap = 'Signs of pneumoconiosis', fig.align = "center", fig.pos = 'H'}
+
+include_graphics("Photos/1730153-1-eng-GB_2lung-800x560.jpg")
+
+```
 
 ## Data
 
-The data consists of 2,606 observations and is split between six lung segments. The six segments represent the right upper, right middle, right lower, left upper, left middle, and left lower regions of the lung images. Each segment contains 39 continuous variables and one categorical variable as the response. 
+The data consists of 2,606 observations from `r length(unique(full$PatientNumMasked))` patients and is split between six lung segments. The six segments represent the right upper, right middle, right lower, left upper, left middle, and left lower regions of the lung images. 
+
+Each segment contains 39 continuous variables and one categorical variable as the response. 
+
+
+
+## Exploratory Data Analysis
+
+Note in __Table 1__ that the count of observations by segment differs. This indicates that not all of the `r length(unique(full$PatientNumMasked))` unique patients have observations for all lung segments. 
 
 ```{r data, echo = FALSE}
 
@@ -104,11 +118,6 @@ kable(observations, caption = "Lung Segment Observations", booktabs = TRUE) %>%
         kable_styling(font_size = 8, position = 'float_right', latex_options = c("striped"))
 
 ```
-
-## Exploratory Data Analysis
-
-The text for EDA goes here
-
 
 ## Naive Model and Variable Importance
 Ok, now we talk about naive model and what we are looking at. 
@@ -145,6 +154,12 @@ Not sure why there is nothing here.
 ## Conclusion  
 
 Not sure why there is nothing here.  
+
+## References
+American Lung Association. (2018). Pneumoconiosis. Retrieved March 17, 2018, from http://www.lung.org/lung-health-and-diseases/lung-disease-lookup/pneumoconiosis/
+
+http://www.miningmonthly.com/coal/safety-and-health/black-lung-case-detected-in-nsw/
+
 
 ## Appendix A - Summary Statistics for Predictors  
 
