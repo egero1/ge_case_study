@@ -85,9 +85,9 @@ use_data <- full %>%
 
 Pneumoconiosis, also known as "black lung disease", is an occupational lung disease caused by dusts that are breathed in and then deposited deep in the lungs causing damage (American Lung Association, 2018). It is often found in employees working in the mining or agricultural industries. There is no cure for Pneumoconiosis, so early detection is vital for proper treatment. 
 
-Traditionally, Pneumoconiosis is detected by having trained medical personnel review chest x-rays for abnormalities. However, due to the lack of trained doctors and the large number of patients waiting to be screened, a reliable and automated process for early detection has been requested.
+The traditional method for detecting Pneumoconiosis requires trained doctors to review chest x-rays for abnormalities that may indicate the disease is present. However, due to the lack of trained personnel and the large number of patients waiting to be screened, a reliable and automated process for early detection is desired.
 
- __Figure 1__ provides an example image of a patient with signs of Pneumoconiosis. An algorithm has been developed to identify the abnormalities in the lungs that are visible in the x-ray images and the data has been collected. 
+ __Figure 1__ provides an example image of a patient with signs of Pneumoconiosis. An algorithm has been used to segment the lung x-rays and gather data from the images. The images have been reviewed and categorized by trained professionals. The task in this project is to use the data from the images to develop a reliable and automated process that is able to correctly identify those patients having Pneumoconiosis while minimizing the occurences of false positives.
 
 ```{r image, out.width = '250px', fig.cap = 'Signs of pneumoconiosis', fig.align = "center", fig.pos = 'H'}
 
@@ -97,9 +97,16 @@ include_graphics("Photos/1730153-1-eng-GB_2lung-800x560.jpg")
 
 ## Data
 
-The data consists of 2,606 observations from `r length(unique(full$PatientNumMasked))` patients and is split between six lung segments. The six segments represent the right upper, right middle, right lower, left upper, left middle, and left lower regions of the lung images. 
+The data consists of 2,606 observations from `r length(unique(full$PatientNumMasked))` patients and is split between six lung segments. The six segments represent the right upper, right middle, right lower, left upper, left middle, and left lower regions of the lung images. The data is provided in an MS Excel spreadsheet, with a separate tab for each segment.
 
-Each segment contains 39 continuous variables and one categorical variable as the response. 
+Each segment contains 39 continuous variables and a categorical response variable labeled as '0' for normal, those without the disease, and '1' for abnormal when Pneumoconiosis is present. The 39 continuous features fall into two categories, intensity based and co-occurrence matrix based. To obtain the intensity based features, a set of 6 features based on the histogram of intensity values – mean, standard deviation, skewness, kurtosis, energy and entropy were extracted. 
+
+Apart from calculating these on the original ROI, we also extract these features after applying a difference filter on the image for the purpose of local enhancement. If I(x,y) denotes the image gray value at (x,y), the first and second order filters are defined as:
+
+
+where d is the difference scale and θ is the orientation at which the difference is computed. f_x and f_y represent the first order difference while f_xx,f_yy,f_xy represent the second order difference. We use the first and second order difference filter bank with given orientations θ∈{0,30,35,60,90,120,135,150,180} and given scale d∈{1,2}. We can calculate 6 intensity-based features (mean, variance, skewness, kurtosis, energy, entropy) for each filtered image, along with the same features for the raw image without filtering, amounting to a total of 222 features. A subset of 34 features from this set has been provided in the attached data sheet. These features are labeled with the prefix Hist_d_θ. 
+
+Co-occurrence matrix based: We also extract a set of 5 features based on the gray level co-occurrence matrix computed for the ROI, namely energy, entropy, local homogeneity, correlation and inertia. The co-occurrence matrix allows us to capture the level of similarity and dissimilarity among adjacent pixels in an ROI. Thus, an ROI with an opacity will contain adjacent pixels with similarly high intensities, whereas a normal ROI will not contain such adjacent pixels. Computing these features for various orientations δ={0,45,90,135} captures this information for various types of adjacency. A subset of 5 of out of 25 such features has been provided in the attached data sheet. These features are labeled with the prefix CoMatrix_Degδ.
 
 
 
@@ -112,10 +119,11 @@ Note in __Table 1__ that the count of observations by segment differs. This indi
 observations <- use_data %>% 
         group_by(Position) %>%
         summarize(Count = n())
+
 observations$Position <- as.character(observations$Position)
 observations <- rbind(observations, c('Total', sum(observations$Count)))
 kable(observations, caption = "Lung Segment Observations", booktabs = TRUE) %>% 
-        kable_styling(font_size = 8, position = 'float_right', latex_options = c("striped"))
+        kable_styling(font_size = 8, position = 'float_right', latex_options = c("striped", "hold_position"))
 
 ```
 
@@ -159,6 +167,8 @@ Not sure why there is nothing here.
 American Lung Association. (2018). Pneumoconiosis. Retrieved March 17, 2018, from http://www.lung.org/lung-health-and-diseases/lung-disease-lookup/pneumoconiosis/
 
 http://www.miningmonthly.com/coal/safety-and-health/black-lung-case-detected-in-nsw/
+
+https://pdfs.semanticscholar.org/5a1e/9346f3a1cb3a67db4f55d5c628092a87f4ff.pdf
 
 
 ## Appendix A - Summary Statistics for Predictors  
