@@ -358,3 +358,9 @@ for(row in 1:dim(use_data[1])) {
         svmFit.response <- predict(svmFit, use_data[row,], type = "response")
         svm.results[row,] <- c(row, svmFit.response)
 }
+
+svm.pred <- rep("Abnormal", dim(use_data)[1])
+svm.pred[svm.results[,2] == 2] = "Normal"
+svm.finalResults <- as.data.frame(cbind(svm.results, full$PatientNumMasked, svm.pred, full$Label2))
+
+confusionMatrix(svm.finalResults$svm.pred, svm.finalResults$V5)
