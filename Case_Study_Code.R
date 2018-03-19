@@ -348,3 +348,13 @@ observations <- c(397, 470, 446, 392, 467, 434, 2606)
 data_table <- data.frame(lung_segment, observations)
 
 length(unique(full$PatientNumMasked))
+library(e1071)
+svm <- svm(Label2 ~., use_data)
+confusionMatrix(predict(svm, use_data), use_data$Label2)
+
+svm.results <- matrix(NA, nrow = dim(use_data)[1], ncol = 2)
+for(row in 1:dim(use_data[1])) {
+        svmFit <- randomForest(Label2 ~ ., data = use_data[-row,])
+        svmFit.response <- predict(svmFit, use_data[row,], type = "response")
+        svm.results[row,] <- c(row, svmFit.response)
+}
