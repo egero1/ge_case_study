@@ -364,3 +364,19 @@ svm.pred[svm.results[,2] == 2] = "Normal"
 svm.finalResults <- as.data.frame(cbind(svm.results, full$PatientNumMasked, svm.pred, full$Label2))
 
 confusionMatrix(svm.finalResults$svm.pred, svm.finalResults$V5)
+
+###############################################################################
+# SVM - LOOCV Caret
+# https://stats.stackexchange.com/questions/136274/leave-one-subject-out-cv-method
+###############################################################################
+
+fitControl <- trainControl(method = "LOOCV",
+                           classProbs = TRUE, 
+                           summaryFunction = twoClassSummary)
+
+svm.model <- caret::train(Label2 ~ .
+                   ,data = use_data 
+                   ,method = "svmRadial"
+                   ,trControl = fitControl
+                   ,metric = "ROC" 
+                   ,preProc = c("center", "scale"))
