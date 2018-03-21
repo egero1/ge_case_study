@@ -1,0 +1,10 @@
+# Data
+
+The data consists of 2,606 observations from `r length(unique(full$PatientNumMasked))` patients and is split between six lung segments. The six segments represent the right upper, right middle, right lower, left upper, left middle, and left lower regions of the lung images. The data is provided in an MS Excel spreadsheet, with a separate tab for each segment.
+
+Each segment contains 39 continuous variables and a categorical response variable labeled as '0' for normal, those without the disease, and '1' for abnormal when Pneumoconiosis is present. The 39 continuous features fall into two categories, intensity based and co-occurrence matrix based. To obtain the intensity based features, a set of 6 features based on the histogram of intensity values – mean, standard deviation, skewness, kurtosis, energy and entropy were extracted. 
+
+Apart from calculating these on the original ROI, we also extract these features after applying a difference filter on the image for the purpose of local enhancement. If I(x,y) denotes the image gray value at (x,y), the first and second order filters are defined as:
+
+
+
