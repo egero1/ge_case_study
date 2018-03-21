@@ -84,7 +84,6 @@ trainIndex <- createDataPartition(use_data$Label2, p = 0.7, list = FALSE)
 trainData <- use_data[trainIndex,]
 testData <- use_data[-trainIndex,]
 
-
 ###############################################################################
 # Exploratory Data Analysis
 ###############################################################################
@@ -153,12 +152,11 @@ for(var in 1:length(use_data[-c(40, 41)])) {
 # Exploratory Model and Important Variables
 ###############################################################################
 
+naive <- rpart(Label2 ~., data = use_data)
+rpart.plot(naive)
+naive.pred <- predict(navie, use_, type = 'class')
 
-tree <- rpart(Label2 ~., data = trainData)
-rpart.plot(tree)
-tree.pred <- predict(tree, testData, type = 'class')
-
-cm <- confusionMatrix(tree.pred, testData$Label2, positive = 'Normal')
+cm <- confusionMatrix(naive.pred, use_data$Label2, positive = 'Normal')
 
 scaled <- scale(use_data[-c(40,41)])
 for(var in 1:length(use_data[-c(40, 41)])) {
@@ -175,12 +173,32 @@ summary(use_data)
 corr <- cor(use_data[-c(40,41)])
 corrplot(corr, type = "upper", tl.cex = 0.5, tl.col = "blue", tl.srt = 45)
 
+###############################################################################
+# Feature selection using Recursive Feature Elimination or RFE
+# https://www.analyticsvidhya.com/blog/2016/12/practical-guide-to-implement-machine-learning-with-caret-package-in-r-with-practice-problem/
+###############################################################################
 
+control <- rfeControl(functions = rfFuncs
+                      ,method = "repeatedcv"
+                      ,number = 3
+                      ,verbose = FALSE)
+
+pref_variables <- rfe(use_data[-41], use_data[,41], rfeControl = control)
+
+# Print the results
+pref_variables
+
+# List the variables
+predictors(pref_variables)
+
+plot(pref_variables, type = c("g", "o"))
+
+# Create a data set using the preferred variables
+model_data <- use_data %>%
+        select(predictors(pref_variables), Label2)
 
 # Set up training conditions - must use LOOCV
-fitControl <- trainControl(method = "repeatedcv"
-                           ,number = 1
-                           ,repeats = 5
+fitControl <- trainControl(method = "loocv"
                            ,summaryFunction = twoClassSummary
                            ,classProbs = TRUE)
 
@@ -255,12 +273,31 @@ confusionMatrix(glm_pred_test, testData$Label, mode = 'everything', positive = '
 library(glm)
 library(boot)
 
-glm.fit <- glm(Label2 ~., data = trainData, family = binomial)
-cv <- cv.glm(trainData, glm.fit)
+glm.fit <- glm(Label2 ~., data = use_data, family = binomial)
+cv <- cv.glm(use_data, glm.fit)
 #cv.glm(trainData, glm.fit)$delta
 glm.fit.probs <- predict(glm.fit, testData, type = "response")
 glm.pred <- rep("Abnormal", 781)
 glm.pred[glm.fit.probs > .5] = "Normal"
+
+###############################################################################
+# SVM - LOOCV Caret
+# https://stats.stackexchange.com/questions/136274/leave-one-subject-out-cv-method
+###############################################################################
+
+fitControl <- trainControl(method = "LOOCV",
+                           classProbs = TRUE, 
+                           summaryFunction = twoClassSummary)
+
+svm.model2 <- caret::train(Label2 ~ .
+                          ,data = model_data 
+                          ,method = "svmRadial"
+                          ,trControl = fitControl
+                          ,metric = "ROC" 
+                          ,preProc = c("center", "scale"))
+
+
+saveRDS(svm.model, "loocv_svm.rds")
 
 
 #####################################################################################
@@ -380,3 +417,8 @@ svm.model <- caret::train(Label2 ~ .
                    ,trControl = fitControl
                    ,metric = "ROC" 
                    ,preProc = c("center", "scale"))
+
+
+saveRDS(svm.model, "loocv_svm.rds")
+
+
