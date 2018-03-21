@@ -53,7 +53,7 @@ Pneumoconiosis, also known as "black lung disease", is an occupational lung dise
 
 The traditional method for detecting Pneumoconiosis requires trained doctors to review chest x-rays for abnormalities that may indicate the disease is present. However, due to the lack of trained personnel and the large number of patients waiting to be screened, a reliable and automated process for early detection is desired.
 
- __Figure 1__ provides an example image of a patient with signs of Pneumoconiosis. An algorithm has been used to segment the lung x-rays and gather data from the images. The images have been reviewed and categorized by trained professionals. The task in this project is to use the data from the images to develop a reliable and automated process that is able to correctly identify those patients having Pneumoconiosis while minimizing the occurences of false positives.
+ __Figure 1__ provides an example image of a patient with signs of Pneumoconiosis [@Caruana2017]. An algorithm has been used to segment the lung x-rays and gather data from the images. The images have been reviewed and categorized by trained professionals. The task in this project is to use the data from the images to develop a reliable and automated process that is able to correctly identify those patients having Pneumoconiosis while minimizing the occurences of false positives.
 
 ```{r image, out.width = '250px', fig.cap = 'Signs of pneumoconiosis', fig.align = "center", fig.pos = 'H'}
 
