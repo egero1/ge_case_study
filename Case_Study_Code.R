@@ -70,6 +70,11 @@ observations <- use_data %>%
 observations$Position <- as.character(observations$Position)
 observations <- rbind(observations, c('Total', sum(observations$Count)))
 
+
+# Summary 
+stats <- basicStats(use_data[-c(40,41)])[c("Mean", "Median", "Stdev", "Minimum", "Maximum", "NAs"),]
+t(round(stats, 2))
+
 # Correlation between predictors
 corr <- cor(use_data[-c(40,41)])
 corrplot(corr, type = "upper", tl.cex = 0.5, tl.col = "blue", tl.srt = 45)
@@ -98,9 +103,6 @@ corrplot(low_corr, method = "color", col = col(200),
 
 
 
-# Summary 
-stats <- basicStats(use_data[-c(40,41)])[c("Mean", "Median", "Stdev", "Minimum", "Maximum", "NAs"),]
-t(round(stats, 2))
 
 
 # Scatter plot between predictors; scatter plot for response is pointless since it is categorical

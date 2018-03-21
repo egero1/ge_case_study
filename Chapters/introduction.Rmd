@@ -1,0 +1,62 @@
+```{r includes, include = FALSE}
+setwd("~/Documents/R_Projects/GE_Case_Study")
+
+# Load libraries
+library(knitr)
+library(openxlsx)
+library(dplyr)
+library(caret)
+library(randomForest)
+library(ggplot2)
+library(reshape2)
+library(corrplot)
+library(fBasics)
+library(rpart)
+library(rpart.plot)
+library(kableExtra)
+```
+
+```{r data_prep, include = FALSE}
+
+# Load data
+ru <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 1, colNames = TRUE)
+rm <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 2, colNames = TRUE)
+rl <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 3, colNames = TRUE)
+lu <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 4, colNames = TRUE)
+lm <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 5, colNames = TRUE)
+ll <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 6, colNames = TRUE)
+
+ru$Position <- "RightUpper"
+rm$Position <- "RightMiddle"
+rl$Position <- "RightLower"
+lu$Position <- "LeftUpper"
+lm$Position <- "LeftMiddle"
+ll$Position <- "LeftLower"
+
+# Combine all sections into one dataframe
+full <- rbind(ru, rm, rl, lu, lm, ll)
+
+# Set levels of the factor - makes it easier to read
+full$Label2 <- ifelse(full$Label == 0, 'Normal', 'Abnormal')
+
+# Prepare data set
+use_data <- full %>%
+        mutate(Label2 = factor(Label2)) %>%
+        mutate(Position = factor(Position)) %>% 
+        select(-PatientNumMasked, -Label)
+
+```
+
+# Introduction and Problem Statement
+
+Pneumoconiosis, also known as "black lung disease", is an occupational lung disease caused by dusts that are breathed in and then deposited deep in the lungs causing damage [@AmericanLungAssociation2018]. It is often found in employees working in the mining or agricultural industries. There is no cure for Pneumoconiosis, so early detection is vital for proper treatment. 
+
+The traditional method for detecting Pneumoconiosis requires trained doctors to review chest x-rays for abnormalities that may indicate the disease is present. However, due to the lack of trained personnel and the large number of patients waiting to be screened, a reliable and automated process for early detection is desired.
+
+ __Figure 1__ provides an example image of a patient with signs of Pneumoconiosis. An algorithm has been used to segment the lung x-rays and gather data from the images. The images have been reviewed and categorized by trained professionals. The task in this project is to use the data from the images to develop a reliable and automated process that is able to correctly identify those patients having Pneumoconiosis while minimizing the occurences of false positives.
+
+```{r image, out.width = '250px', fig.cap = 'Signs of pneumoconiosis', fig.align = "center", fig.pos = 'H'}
+
+include_graphics("Photos/1730153-1-eng-GB_2lung-800x560.jpg")
+
+```

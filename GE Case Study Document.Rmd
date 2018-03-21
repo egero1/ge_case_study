@@ -1,7 +1,4 @@
 ---
-title: "GE Case Study: Detecting Pneumoconiosis"
-author: "Eric Gero (eric.gero@ge.com)"
-date: "3/16/2018"
 header-includes:
   - \usepackage{booktabs}
   - \usepackage{longtable}
@@ -19,7 +16,6 @@ header-includes:
   
 output:
   pdf_document: 
-        toc: true
         fig_caption: yes
         number_sections: yes
   word_document: default
@@ -38,25 +34,33 @@ options(width = 400, kableExtra.latex.load_packages = FALSE, knitr.table.format 
 
 ```
 
+```{r child = 'Chapters/titlepage.Rmd'}
+```
+
+\newpage
+
+\tableofcontents
+
+\newpage
 
 
-```{r child = 'Introduction.Rmd'}
+```{r child = 'Chapters/introduction.Rmd'}
 ```
 
 \FloatBarrier
 
-```{r child = 'Data.Rmd'}
+```{r child = 'Chapters/data.Rmd'}
 ```
 
 \FloatBarrier
 
-```{r child = 'EDA.Rmd'}
+```{r child = 'Chapters/eda.Rmd'}
 ```
 
 
 \FloatBarrier
 
-```{r child = 'Naive_Model.Rmd'}
+```{r child = 'Chapters/naivemodel.Rmd'}
 ```
 
 \FloatBarrier

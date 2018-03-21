@@ -1,0 +1,27 @@
+# Naive Model and Variable Importance
+Ok, now we talk about naive model and what we are looking at. 
+
+```{r naive_model, echo = FALSE, out.width = '350px', fig.cap = 'Naive Decision Tree', fig.align = "center", fig.pos = 'H'}
+
+tree <- rpart(Label2 ~., data = use_data)
+rpart.plot(tree)
+
+```
+
+The model... I dont understand why it moves the image  
+
+```{r naive_cm, echo = FALSE, , comment = NA}
+
+tree.pred <- predict(tree, use_data, type = 'class')
+tree.cm <- confusionMatrix(tree.pred, use_data$Label2, positive = 'Normal')
+
+kable(tree.cm$table, caption = "Confusion Matrix", booktabs = TRUE) %>% 
+        kable_styling(font_size = 8, position = 'float_right', latex_options = c("striped", "hold_position"))
+
+kable(tree.cm$overall, booktabs = TRUE, col.names = 'Value') %>% 
+        kable_styling(font_size = 8, position = 'float_right', latex_options = c("striped", "hold_position"))
+
+kable(as.data.frame(tree.cm$byClass), booktabs = TRUE, col.names = 'Value') %>% 
+        kable_styling(font_size = 8, position = 'float_right', latex_options = c("striped", "hold_position"))
+
+```
