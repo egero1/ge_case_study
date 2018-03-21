@@ -4,7 +4,7 @@
 setwd("~/Documents/R_Projects/GE_Case_Study")
 
 # Load libraries
-library(xlsx)
+library(openxlsx)
 library(dplyr)
 library(caret)
 library(randomForest)
@@ -14,7 +14,6 @@ library(corrplot)
 library(fBasics)
 library(rpart)
 library(rpart.plot)
-library(pROC)
 
 # https://www.r-bloggers.com/identify-describe-plot-and-remove-the-outliers-from-the-dataset/
 outlierKD <- function(dt, var) {
@@ -54,12 +53,12 @@ outlierKD <- function(dt, var) {
 ###############################################################################
 
 # Load data
-ru <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 1, header = TRUE, colClasses = NA)
-rm <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 2, header = TRUE, colClasses = NA)
-rl <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 3, header = TRUE, colClasses = NA)
-lu <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 4, header = TRUE, colClasses = NA)
-lm <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 5, header = TRUE, colClasses = NA)
-ll <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 6, header = TRUE, colClasses = NA)
+ru <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 1, colNames = TRUE)
+rm <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 2, colNames = TRUE)
+rl <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 3, colNames = TRUE)
+lu <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 4, colNames = TRUE)
+lm <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 5, colNames = TRUE)
+ll <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 6, colNames = TRUE)
 
 ru$Position <- "Right Upper"
 rm$Position <- "Right Middle"
