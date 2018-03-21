@@ -3,6 +3,25 @@
 
 setwd("~/Documents/R_Projects/GE_Case_Study")
 
+# Define functions
+# Check scatter plots of continuous variables
+panel.cor <- function(x, y, digits = 2, cex.cor, ...) {
+        usr <- par("usr"); on.exit(par(usr))
+        par(usr = c(0, 1, 0, 1))
+        # correlation coefficient
+        r <- cor(x, y)
+        txt <- format(c(r, 0.123456789), digits = digits)[1]
+        txt <- paste("r= ", txt, sep = "")
+        text(0.5, 0.6, txt)
+        
+        # p-value calculation
+        p <- cor.test(x, y)$p.value
+        txt2 <- format(c(p, 0.123456789), digits = digits)[1]
+        txt2 <- paste("p= ", txt2, sep = "")
+        if(p<0.01) txt2 <- paste("p= ", "<0.01", sep = "")
+        text(0.5, 0.4, txt2)
+}
+
 # Load libraries
 library(openxlsx)
 library(dplyr)
@@ -15,38 +34,7 @@ library(fBasics)
 library(rpart)
 library(rpart.plot)
 
-# https://www.r-bloggers.com/identify-describe-plot-and-remove-the-outliers-from-the-dataset/
-outlierKD <- function(dt, var) {
-        var_name <- eval(substitute(var),eval(dt))
-        na1 <- sum(is.na(var_name))
-        m1 <- mean(var_name, na.rm = T)
-        par(mfrow=c(2, 2), oma=c(0,0,3,0))
-        boxplot(var_name, main="With outliers")
-        hist(var_name, main="With outliers", xlab=NA, ylab=NA)
-        outlier <- boxplot.stats(var_name)$out
-        mo <- mean(outlier)
-        var_name <- ifelse(var_name %in% outlier, NA, var_name)
-        boxplot(var_name, main="Without outliers")
-        hist(var_name, main="Without outliers", xlab=NA, ylab=NA)
-        title("Outlier Check", outer=TRUE)
-        na2 <- sum(is.na(var_name))
-        cat("Outliers identified:", na2 - na1, "n")
-        cat("Propotion (%) of outliers:", round((na2 - na1) / sum(!is.na(var_name))*100, 1), "n")
-        cat("Mean of the outliers:", round(mo, 2), "n")
-        m2 <- mean(var_name, na.rm = T)
-        cat("Mean without removing outliers:", round(m1, 2), "n")
-        cat("Mean if we remove outliers:", round(m2, 2), "n")
-        response <- readline(prompt="Do you want to remove outliers and to replace with NA? [yes/no]: ")
-        if(response == "y" | response == "yes"){
-                dt[as.character(substitute(var))] <- invisible(var_name)
-                assign(as.character(as.list(match.call())$dt), dt, envir = .GlobalEnv)
-                cat("Outliers successfully removed", "n")
-                return(invisible(dt))
-        } else{
-                cat("Nothing changed", "n")
-                return(invisible(var_name))
-        }
-}
+
 
 ###############################################################################
 # Load data and prepare dataset
@@ -98,24 +86,12 @@ observations <- use_data %>%
 observations$Position <- as.character(observations$Position)
 observations <- rbind(observations, c('Total', sum(observations$Count)))
 
-# Check scatter plots of continuous variables
-panel.cor <- function(x, y, digits = 2, cex.cor, ...)
-{
-        usr <- par("usr"); on.exit(par(usr))
-        par(usr = c(0, 1, 0, 1))
-        # correlation coefficient
-        r <- cor(x, y)
-        txt <- format(c(r, 0.123456789), digits = digits)[1]
-        txt <- paste("r= ", txt, sep = "")
-        text(0.5, 0.6, txt)
-        
-        # p-value calculation
-        p <- cor.test(x, y)$p.value
-        txt2 <- format(c(p, 0.123456789), digits = digits)[1]
-        txt2 <- paste("p= ", txt2, sep = "")
-        if(p<0.01) txt2 <- paste("p= ", "<0.01", sep = "")
-        text(0.5, 0.4, txt2)
-}
+
+# Correlation between predictors
+correlationMatrix <- cor(use_data[-c(40,41)])
+highCorrelation <- findCorrelation(correlationMatrix, cutoff = 0.5)
+
+correlationMatrix[,highCorrelation]
 
 graphics.off()
 par(mar = c(1,1,1,1))
@@ -124,10 +100,7 @@ pairs(use_data[-c(10:41)], upper.panel = panel.cor)
 # Summary 
 stats <- basicStats(use_data[-c(40,41)])[c("Mean", "Median", "Stdev", "Minimum", "Maximum", "NAs"),]
 t(round(stats, 2))
-options(qwraps2_markup = "markdown")
-col < -seq(1, ncol(use_data), by = 1)
-mysummary <- mapply(tab_summary, use_data[,col])
-summary_table(dplyr::group_by(use_data, Position), mysummary)
+
 
 # Scatter plot between predictors; scatter plot for response is pointless since it is categorical
 
