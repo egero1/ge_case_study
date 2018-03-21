@@ -4,23 +4,7 @@
 setwd("~/Documents/R_Projects/GE_Case_Study")
 
 # Define functions
-# Check scatter plots of continuous variables
-panel.cor <- function(x, y, digits = 2, cex.cor, ...) {
-        usr <- par("usr"); on.exit(par(usr))
-        par(usr = c(0, 1, 0, 1))
-        # correlation coefficient
-        r <- cor(x, y)
-        txt <- format(c(r, 0.123456789), digits = digits)[1]
-        txt <- paste("r= ", txt, sep = "")
-        text(0.5, 0.6, txt)
-        
-        # p-value calculation
-        p <- cor.test(x, y)$p.value
-        txt2 <- format(c(p, 0.123456789), digits = digits)[1]
-        txt2 <- paste("p= ", txt2, sep = "")
-        if(p<0.01) txt2 <- paste("p= ", "<0.01", sep = "")
-        text(0.5, 0.4, txt2)
-}
+
 
 # Load libraries
 library(openxlsx)
@@ -86,16 +70,17 @@ observations <- use_data %>%
 observations$Position <- as.character(observations$Position)
 observations <- rbind(observations, c('Total', sum(observations$Count)))
 
-
 # Correlation between predictors
+corr <- cor(use_data[-c(40,41)])
+corrplot(corr, type = "upper", tl.cex = 0.5, tl.col = "blue", tl.srt = 45)
+
+# Review and remove highly correlated predictors
 correlationMatrix <- cor(use_data[-c(40,41)])
 highCorrelation <- findCorrelation(correlationMatrix, cutoff = 0.5)
 
 correlationMatrix[,highCorrelation]
 
-graphics.off()
-par(mar = c(1,1,1,1))
-pairs(use_data[-c(10:41)], upper.panel = panel.cor)
+
 
 # Summary 
 stats <- basicStats(use_data[-c(40,41)])[c("Mean", "Median", "Stdev", "Minimum", "Maximum", "NAs"),]
@@ -103,9 +88,6 @@ t(round(stats, 2))
 
 
 # Scatter plot between predictors; scatter plot for response is pointless since it is categorical
-
-library(lattice)
-splom(use_data, groups = Position)
 pairs(Label2 ~ ., data = use_data[c(1,41)])
 
 # Check for outliers
@@ -140,10 +122,6 @@ outlierKD(use_data, Hist_0_0_0_Mean)
 
 # Review the dataset
 summary(use_data)
-
-# Correlation plot
-corr <- cor(use_data[-c(40,41)])
-corrplot(corr, type = "upper", tl.cex = 0.5, tl.col = "blue", tl.srt = 45)
 
 ###############################################################################
 # Feature selection using Recursive Feature Elimination or RFE
