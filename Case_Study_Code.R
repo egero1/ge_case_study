@@ -14,6 +14,7 @@ library(corrplot)
 library(fBasics)
 library(rpart)
 library(rpart.plot)
+library(pROC)
 
 # https://www.r-bloggers.com/identify-describe-plot-and-remove-the-outliers-from-the-dataset/
 outlierKD <- function(dt, var) {
@@ -122,11 +123,10 @@ par(mar = c(1,1,1,1))
 pairs(use_data[-c(10:41)], upper.panel = panel.cor)
 
 # Summary 
-
 stats <- basicStats(use_data[-c(40,41)])[c("Mean", "Median", "Stdev", "Minimum", "Maximum", "NAs"),]
 t(round(stats, 2))
 options(qwraps2_markup = "markdown")
-col<-seq(1, ncol(use_data), by = 1)
+col < -seq(1, ncol(use_data), by = 1)
 mysummary <- mapply(tab_summary, use_data[,col])
 summary_table(dplyr::group_by(use_data, Position), mysummary)
 
@@ -197,10 +197,37 @@ plot(pref_variables, type = c("g", "o"))
 model_data <- use_data %>%
         select(predictors(pref_variables), Label2)
 
+###############################################################################
+# GLM - LOOCV
+# http://www.rebeccabarter.com/blog/2017-11-17-caret_tutorial/
+# https://www.analyticsvidhya.com/blog/2016/12/practical-guide-to-implement-machine-learning-with-caret-package-in-r-with-practice-problem/
+# https://www.analyticsvidhya.com/blog/2016/12/practical-guide-to-implement-machine-learning-with-caret-package-in-r-with-practice-problem/
+###############################################################################
+
 # Set up training conditions - must use LOOCV
 fitControl <- trainControl(method = "loocv"
                            ,summaryFunction = twoClassSummary
                            ,classProbs = TRUE)
+
+#fitControl <- trainControl(method = "repeatedcv"
+#                           ,number = 1
+#                           ,repeats = 5
+#                           ,returnResamp="none"
+#                           ,classProbs = TRUE
+#                           ,savePredictions = 'final')
+
+glm.model <- train(Label2 ~.
+             ,data = model_data
+             ,family = "binomial"
+             ,method = 'glm'
+             ,trControl = fitControl
+             ,metric = "ROC")
+
+glm_pred_test <- predict(glm.model, model_data)
+
+confusionMatrix(glm_pred_test, model_data$Label2, mode = 'everything', positive = 'Normal')
+
+plot roc
 
 ###############################################################################
 # Random Forest - LOOCV  91.55 Acc 0.8111 Kappa
@@ -296,9 +323,44 @@ svm.model2 <- caret::train(Label2 ~ .
                           ,metric = "ROC" 
                           ,preProc = c("center", "scale"))
 
-
+# Save models to prevent the need to rerun
 saveRDS(svm.model, "loocv_svm.rds")
+saveRDS(svm.model2, "loocv_svm2.rds")
 
+#do I need to repredict?
+set.seed(1234)
+fitControl <- trainControl(classProbs = TRUE, 
+                           summaryFunction = twoClassSummary)
+
+test.results <- matrix(NA, nrow = dim(use_data)[1], ncol = 2)
+for(row in 1:dim(model_data[1])) {
+        svm.final <- caret::train(Label2 ~ .
+                           ,data = model_data[-row,]
+                           ,method = "svmRadial"
+                           ,metric = "ROC" 
+                           ,preProc = c("center", "scale")
+                           ,trControl = fitControl
+                           ,tuneGrid = data.frame(C = 1, sigma = 0.01985963))
+}
+test.pred <- rep("Abnormal", dim(model_data)[1])
+test.pred[test.results[,2] > .5] = "Normal"
+finalResults <- as.data.frame(cbind(test.results, full$PatientNumMasked, test.pred, full$Label2))
+
+confusionMatrix(finalResults$glm.pred, finalResults$V5)
+caret::confusionMatrix(as.factor(pred), model_data$Label2, mode = "everything", positive = 'Normal')
+
+svm.cm <- caret::confusionMatrix(svm.model$pred$pred[which(svm.model$pred$C == 1)], model_data$Label2, mode = "everything", positive = 'Normal')
+svm.ROC <- roc(model_data$Label2, svm.model$pred$Normal[which(svm.model$pred$C == 1)])
+plot(svm.ROC, col = "blue")
+auc(svm.ROC)
+
+svm.cm2 <- caret::confusionMatrix(svm.model2$pred$pred[which(svm.model2$pred$C == 1)], model_data$Label2, mode = "everything", positive = 'Normal')
+svm.ROC2 <- roc(model_data$Label2, svm.model2$pred$Normal[which(svm.model2$pred$C == 1)])
+plot(svm.ROC2, col = "blue")
+auc(svm.ROC2)
+
+svm.model2$finalModel
+plot(svm.model2)
 
 #####################################################################################
 glm.results <- matrix(NA, nrow = dim(use_data)[1], ncol = 2)
