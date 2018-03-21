@@ -5,6 +5,8 @@ setwd("~/Documents/R_Projects/GE_Case_Study")
 
 # Define functions
 
+# Needed to load rJava
+# dyn.load(paste0(system2('/usr/libexec/java_home', stdout = TRUE), '/lib/server/libjvm.dylib'))
 
 # Load libraries
 library(openxlsx)
@@ -17,8 +19,6 @@ library(corrplot)
 library(fBasics)
 library(rpart)
 library(rpart.plot)
-
-
 
 ###############################################################################
 # Load data and prepare dataset
@@ -76,9 +76,25 @@ corrplot(corr, type = "upper", tl.cex = 0.5, tl.col = "blue", tl.srt = 45)
 
 # Review and remove highly correlated predictors
 correlationMatrix <- cor(use_data[-c(40,41)])
-highCorrelation <- findCorrelation(correlationMatrix, cutoff = 0.5)
+highCorrelation <- findCorrelation(correlationMatrix, cutoff = 0.50)
+rows <- length(colnames(use_data[highCorrelation]))
+highly_correlated <- data.frame("Correlated Variables 1" = colnames(use_data[highCorrelation])[1:(rows / 2)], 
+                                "Correlated Variables 2" = colnames(use_data[highCorrelation])[(rows/2 + 1):rows])
 
-correlationMatrix[,highCorrelation]
+use_data_lc <- use_data[,-highCorrelation]
+low_corr <- use_data_lc %>%
+        select(-Position, -Label2)
+low_corr<- cor(low_corr)
+
+col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
+corrplot(low_corr, method = "color", col = col(200),
+         type = "upper", order = "hclust", number.cex = .7,
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col = "blue", tl.srt = 45, tl.cex = 0.5, # Text label color and rotation
+         # Combine with significance
+         sig.level = 0.01, insig = "blank", 
+         # hide correlation coefficient on the principal diagonal
+         diag = FALSE)
 
 
 

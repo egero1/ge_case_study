@@ -48,3 +48,13 @@ panel.cor <- function(x, y, digits = 2, cex.cor, ...) {
         if(p<0.01) txt2 <- paste("p= ", "<0.01", sep = "")
         text(0.5, 0.4, txt2)
 }
+
+American Lung Association. (2018). Pneumoconiosis. Retrieved March 17, 2018, from http://www.lung.org/lung-health-and-diseases/lung-disease-lookup/pneumoconiosis/
+        
+        http://www.miningmonthly.com/coal/safety-and-health/black-lung-case-detected-in-nsw/
+        
+        https://pdfs.semanticscholar.org/5a1e/9346f3a1cb3a67db4f55d5c628092a87f4ff.pdf
+
+#where d is the difference scale and θ is the orientation at which the difference is computed. f_x and f_y represent the first order difference while f_xx,f_yy,f_xy represent the second order difference. We use the first and second order difference filter bank with given orientations θ∈{0,30,35,60,90,120,135,150,180} and given scale d∈{1,2}. We can calculate 6 intensity-based features (mean, variance, skewness, kurtosis, energy, entropy) for each filtered image, along with the same features for the raw image without filtering, amounting to a total of 222 features. A subset of 34 features from this set has been provided in the attached data sheet. These features are labeled with the prefix Hist_d_θ. 
+
+#Co-occurrence matrix based: We also extract a set of 5 features based on the gray level co-occurrence matrix computed for the ROI, namely energy, entropy, local homogeneity, correlation and inertia. The co-occurrence matrix allows us to capture the level of similarity and dissimilarity among adjacent pixels in an ROI. Thus, an ROI with an opacity will contain adjacent pixels with similarly high intensities, whereas a normal ROI will not contain such adjacent pixels. Computing these features for various orientations δ={0,45,90,135} captures this information for various types of adjacency. A subset of 5 of out of 25 such features has been provided in the attached data sheet. These features are labeled with the prefix CoMatrix_Degδ.
