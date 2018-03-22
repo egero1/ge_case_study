@@ -227,7 +227,7 @@ svm.model <- caret::train(Label2 ~ .
                            ,data = model_data 
                            ,method = "svmRadial"
                            ,trControl = fitControl
-                           ,metric = "Kappa" 
+                           ,metric = "ROC" 
                            ,preProc = c("center", "scale"))
 
 # Get the confusion matrix
@@ -237,8 +237,8 @@ svm.cm <- caret::confusionMatrix(svm.model$pred$pred, model_data$Label2, mode = 
 performance <- getTrainPerf(svm.model)
 svm_results <- data.frame("Model" = "SVM"
                             ,"ROC" = performance[,1]
-                            ,"Accuracy" = svm.cm[1]
-                            ,"Kappa" = svm.cm[2]
+                            ,"Accuracy" = svm.cm$overall[1]
+                            ,"Kappa" = svm.cm$overall[2]
                             ,"Sensitivity" = performance[,2]
                             ,"Specificity" = performance[,3])
 
