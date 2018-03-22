@@ -168,7 +168,6 @@ compare model data to low_corr_lc
 # https://www.analyticsvidhya.com/blog/2016/12/practical-guide-to-implement-machine-learning-with-caret-package-in-r-with-practice-problem/
 ###############################################################################
 
-
 # Set up training conditions - must use LOOCV
 fitControl <- trainControl(method = "LOOCV"
                            ,classProbs = TRUE 
@@ -189,7 +188,12 @@ glm.cm <- caret::confusionMatrix(glm.model$pred$pred, model_data$Label2, mode = 
 
 # Get the performance metrics from the model and save for comparison
 performance <- getTrainPerf(glm.model)
-model_results <- data.frame("Model" = "GLM", "ROC" = performance[,1], "Accuracy" = glm.cm[1], "Kappa" = glm.cm[2],"Sensitivity" = performance[,2], "Specificity" = performance[,3])
+glm_results <- data.frame("Model" = "GLM"
+                            ,"ROC" = performance[,1]
+                            ,"Accuracy" = glm.cm[1]
+                            ,"Kappa" = glm.cm[2]
+                            ,"Sensitivity" = performance[,2]
+                            ,"Specificity" = performance[,3])
 
 glm.ROC <- roc(model_data$Label2, glm.model$pred$Normal)
 plot(glm.ROC, col = "blue")
@@ -198,6 +202,85 @@ auc(svm.ROC)
 # Print model coefficients
 glm.model$finalModel$coefficients
 
+###############################################################################
+# SVM - LOOCV Caret
+# https://stats.stackexchange.com/questions/136274/leave-one-subject-out-cv-method
+###############################################################################
+
+# Set up training conditions - must use LOOCV
+fitControl <- trainControl(method = "LOOCV"
+                           ,classProbs = TRUE 
+                           ,summaryFunction = twoClassSummary
+                           ,savePredictions = 'final')
+
+# Second model is a Support Vector Machine
+set.seed(1234)
+svm.model <- caret::train(Label2 ~ .
+                           ,data = model_data 
+                           ,method = "svmRadial"
+                           ,trControl = fitControl
+                           ,metric = "Kappa" 
+                           ,preProc = c("center", "scale"))
+
+# Get the confusion matrix
+svm.cm <- caret::confusionMatrix(svm.model$pred$pred, model_data$Label2, mode = "everything")
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(svm.model)
+svm_results <- data.frame("Model" = "SVM"
+                            ,"ROC" = performance[,1]
+                            ,"Accuracy" = svm.cm[1]
+                            ,"Kappa" = svm.cm[2]
+                            ,"Sensitivity" = performance[,2]
+                            ,"Specificity" = performance[,3])
+
+svm.ROC <- roc(model_data$Label2, svm.model$pred$Normal)
+plot(svm.ROC, col = "blue")
+auc(svm.ROC)
+
+# Print model coefficients
+svm.model$finalModel$coefficients
+
+###############################################################################
+# kNN - LOOCV Caret
+###############################################################################
+
+# Set up training conditions - must use LOOCV
+fitControl <- trainControl(method = "LOOCV"
+                           ,classProbs = TRUE 
+                           ,summaryFunction = twoClassSummary
+                           ,savePredictions = 'final')
+
+# Third model is a k-Nearest Neighbor
+set.seed(1234)
+knn.model <- caret::train(Label2 ~ .
+                          ,data = model_data 
+                          ,method = "knn"
+                          ,trControl = fitControl
+                          ,metric = "Kappa" 
+                          ,preProc = c("center", "scale")
+                          ,tuneLength = 20)
+
+# Get the confusion matrix
+knn.cm <- caret::confusionMatrix(knn.model$pred$pred, model_data$Label2, mode = "everything")
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(knn.model)
+knn_results <- data.frame("Model" = "kNN"
+                            ,"ROC" = performance[,1]
+                            ,"Accuracy" = knn.cm[1]
+                            ,"Kappa" = knn.cm[2]
+                            ,"Sensitivity" = performance[,2]
+                            ,"Specificity" = performance[,3])
+
+knn.ROC <- roc(model_data$Label2, knn.model$pred$Normal)
+plot(knn.ROC, col = "blue")
+auc(knn.ROC)
+
+# Print model coefficients
+knn.model$finalModel$coefficients
+
+##################################################################################################################
 
 ###############################################################################
 # Random Forest - LOOCV  91.55 Acc 0.8111 Kappa
@@ -233,31 +316,6 @@ rf_pred_test <- predict(rf, testData)
 confusionMatrix(rf_pred_test, testData$Label2)
 
 
-###############################################################################
-# GLM - LOOCV
-# http://www.rebeccabarter.com/blog/2017-11-17-caret_tutorial/
-# https://www.analyticsvidhya.com/blog/2016/12/practical-guide-to-implement-machine-learning-with-caret-package-in-r-with-practice-problem/
-# https://www.analyticsvidhya.com/blog/2016/12/practical-guide-to-implement-machine-learning-with-caret-package-in-r-with-practice-problem/
-###############################################################################
-
-# Set up training conditions - must use LOOCV
-fitControl <- trainControl(method = "repeatedcv"
-                           ,number = 1
-                           ,repeats = 5
-                           ,returnResamp="none"
-                           ,classProbs = TRUE
-                           ,savePredictions = 'final')
-
-glm <- train(Label2 ~.
-             ,data = trainData
-             ,family = "binomial"
-             ,method = 'glm'
-             ,trControl = fitControl
-             ,metric = "ROC")
-
-glm_pred_test <- predict(glm, testData)
-
-confusionMatrix(glm_pred_test, testData$Label, mode = 'everything', positive = '1')
 
 ###############################################################################
 # GLM - LOOCV  need to implement LOOCV

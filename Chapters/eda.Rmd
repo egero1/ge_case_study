@@ -15,6 +15,20 @@ kable(observations, caption = "Lung Segment Observations", booktabs = TRUE) %>%
 
 ```
 
+Talk about checking to make sure labels for all patient ids are the same across tabs.
+
+```{r check_labels, echo = FALSE}
+
+# Verify that all labels for patients are the same
+checkLabel <- full %>%
+        group_by(PatientNumMasked) %>%
+        mutate(minLabel = min(Label)) %>%
+        mutate(maxLabel = max(Label)) %>%
+        mutate(count = length(PatientNumMasked)) %>%
+        select(PatientNumMasked, minLabel, maxLabel, count) 
+
+```
+
 The correlation plot in __Figure 2__ shows that some of the predictors have strong correlations with each other. This requires further investigation as high correlation among predictors can cause instability in the model. Generally, when two variables are highly correlated, it is best to remove one since the second is not providing new information.
 
 ```{r correlation, echo = FALSE, out.width = '350px', fig.cap = 'Correlation Matrix', fig.align = "center", fig.pos = 'H'}
