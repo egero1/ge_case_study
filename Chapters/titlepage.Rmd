@@ -1,0 +1,20 @@
+\begin{centering}
+
+\vspace{3 cm}
+
+\Huge
+
+{\bf GE Case Study: Detecting Pneumoconiosis}
+
+\vspace{3 cm}
+
+\Large
+
+Eric Gero (eric.gero@ge.com)
+
+\vspace{3 cm}
+
+\normalsize
+April 2018
+
+\end{centering}

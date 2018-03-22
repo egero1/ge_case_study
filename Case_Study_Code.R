@@ -3,8 +3,13 @@
 
 setwd("~/Documents/R_Projects/GE_Case_Study")
 
+# Define functions
+
+# Needed to load rJava
+# dyn.load(paste0(system2('/usr/libexec/java_home', stdout = TRUE), '/lib/server/libjvm.dylib'))
+
 # Load libraries
-library(xlsx)
+library(openxlsx)
 library(dplyr)
 library(caret)
 library(randomForest)
@@ -14,52 +19,18 @@ library(corrplot)
 library(fBasics)
 library(rpart)
 library(rpart.plot)
-library(pROC)
-
-# https://www.r-bloggers.com/identify-describe-plot-and-remove-the-outliers-from-the-dataset/
-outlierKD <- function(dt, var) {
-        var_name <- eval(substitute(var),eval(dt))
-        na1 <- sum(is.na(var_name))
-        m1 <- mean(var_name, na.rm = T)
-        par(mfrow=c(2, 2), oma=c(0,0,3,0))
-        boxplot(var_name, main="With outliers")
-        hist(var_name, main="With outliers", xlab=NA, ylab=NA)
-        outlier <- boxplot.stats(var_name)$out
-        mo <- mean(outlier)
-        var_name <- ifelse(var_name %in% outlier, NA, var_name)
-        boxplot(var_name, main="Without outliers")
-        hist(var_name, main="Without outliers", xlab=NA, ylab=NA)
-        title("Outlier Check", outer=TRUE)
-        na2 <- sum(is.na(var_name))
-        cat("Outliers identified:", na2 - na1, "n")
-        cat("Propotion (%) of outliers:", round((na2 - na1) / sum(!is.na(var_name))*100, 1), "n")
-        cat("Mean of the outliers:", round(mo, 2), "n")
-        m2 <- mean(var_name, na.rm = T)
-        cat("Mean without removing outliers:", round(m1, 2), "n")
-        cat("Mean if we remove outliers:", round(m2, 2), "n")
-        response <- readline(prompt="Do you want to remove outliers and to replace with NA? [yes/no]: ")
-        if(response == "y" | response == "yes"){
-                dt[as.character(substitute(var))] <- invisible(var_name)
-                assign(as.character(as.list(match.call())$dt), dt, envir = .GlobalEnv)
-                cat("Outliers successfully removed", "n")
-                return(invisible(dt))
-        } else{
-                cat("Nothing changed", "n")
-                return(invisible(var_name))
-        }
-}
 
 ###############################################################################
 # Load data and prepare dataset
 ###############################################################################
 
 # Load data
-ru <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 1, header = TRUE, colClasses = NA)
-rm <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 2, header = TRUE, colClasses = NA)
-rl <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 3, header = TRUE, colClasses = NA)
-lu <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 4, header = TRUE, colClasses = NA)
-lm <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 5, header = TRUE, colClasses = NA)
-ll <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 6, header = TRUE, colClasses = NA)
+ru <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 1, colNames = TRUE)
+rm <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 2, colNames = TRUE)
+rl <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 3, colNames = TRUE)
+lu <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 4, colNames = TRUE)
+lm <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 5, colNames = TRUE)
+ll <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 6, colNames = TRUE)
 
 ru$Position <- "Right Upper"
 rm$Position <- "Right Middle"
@@ -99,41 +70,42 @@ observations <- use_data %>%
 observations$Position <- as.character(observations$Position)
 observations <- rbind(observations, c('Total', sum(observations$Count)))
 
-# Check scatter plots of continuous variables
-panel.cor <- function(x, y, digits = 2, cex.cor, ...)
-{
-        usr <- par("usr"); on.exit(par(usr))
-        par(usr = c(0, 1, 0, 1))
-        # correlation coefficient
-        r <- cor(x, y)
-        txt <- format(c(r, 0.123456789), digits = digits)[1]
-        txt <- paste("r= ", txt, sep = "")
-        text(0.5, 0.6, txt)
-        
-        # p-value calculation
-        p <- cor.test(x, y)$p.value
-        txt2 <- format(c(p, 0.123456789), digits = digits)[1]
-        txt2 <- paste("p= ", txt2, sep = "")
-        if(p<0.01) txt2 <- paste("p= ", "<0.01", sep = "")
-        text(0.5, 0.4, txt2)
-}
-
-graphics.off()
-par(mar = c(1,1,1,1))
-pairs(use_data[-c(10:41)], upper.panel = panel.cor)
 
 # Summary 
 stats <- basicStats(use_data[-c(40,41)])[c("Mean", "Median", "Stdev", "Minimum", "Maximum", "NAs"),]
 t(round(stats, 2))
-options(qwraps2_markup = "markdown")
-col < -seq(1, ncol(use_data), by = 1)
-mysummary <- mapply(tab_summary, use_data[,col])
-summary_table(dplyr::group_by(use_data, Position), mysummary)
+
+# Correlation between predictors
+corr <- cor(use_data[-c(40,41)])
+corrplot(corr, type = "upper", tl.cex = 0.5, tl.col = "blue", tl.srt = 45)
+
+# Review and remove highly correlated predictors
+correlationMatrix <- cor(use_data[-c(40,41)])
+highCorrelation <- findCorrelation(correlationMatrix, cutoff = 0.50)
+rows <- length(colnames(use_data[highCorrelation]))
+highly_correlated <- data.frame("Correlated Variables 1" = colnames(use_data[highCorrelation])[1:(rows / 2)], 
+                                "Correlated Variables 2" = colnames(use_data[highCorrelation])[(rows/2 + 1):rows])
+
+use_data_lc <- use_data[,-highCorrelation]
+low_corr <- use_data_lc %>%
+        select(-Position, -Label2)
+low_corr<- cor(low_corr)
+
+col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
+corrplot(low_corr, method = "color", col = col(200),
+         type = "upper", order = "hclust", number.cex = .7,
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col = "blue", tl.srt = 45, tl.cex = 0.5, # Text label color and rotation
+         # Combine with significance
+         sig.level = 0.01, insig = "blank", 
+         # hide correlation coefficient on the principal diagonal
+         diag = FALSE)
+
+
+
+
 
 # Scatter plot between predictors; scatter plot for response is pointless since it is categorical
-
-library(lattice)
-splom(use_data, groups = Position)
 pairs(Label2 ~ ., data = use_data[c(1,41)])
 
 # Check for outliers
@@ -168,10 +140,6 @@ outlierKD(use_data, Hist_0_0_0_Mean)
 
 # Review the dataset
 summary(use_data)
-
-# Correlation plot
-corr <- cor(use_data[-c(40,41)])
-corrplot(corr, type = "upper", tl.cex = 0.5, tl.col = "blue", tl.srt = 45)
 
 ###############################################################################
 # Feature selection using Recursive Feature Elimination or RFE
