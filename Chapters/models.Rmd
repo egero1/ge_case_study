@@ -1,0 +1,63 @@
+# Models
+
+```{r model_data, include = FALSE}
+
+control <- rfeControl(functions = rfFuncs
+                      ,method = "repeatedcv"
+                      ,number = 3
+                      ,verbose = FALSE)
+
+pref_variables <- rfe(use_data[-41], use_data[,41], rfeControl = control)
+
+# Print the results
+pref_variables
+
+# List the variables
+predictors(pref_variables)
+```
+
+```{r var_plot, echo = FALSE, out.width = '350px', fig.cap = 'Variable Selection', fig.align = "center", fig.pos = 'H'}
+plot(pref_variables, type = c("g", "o"))
+
+# Create a data set using the preferred variables
+model_data <- use_data %>%
+        select(predictors(pref_variables), Label2)
+
+```
+
+
+```{r glm, echo = FALSE}
+
+# Set up training conditions - must use LOOCV
+fitControl <- trainControl(method = "LOOCV"
+                           ,classProbs = TRUE 
+                           ,summaryFunction = twoClassSummary
+                           ,savePredictions = 'final')
+
+# First model is a Generalized Linear Model
+set.seed(1234)
+glm.model <- caret::train(Label2 ~.
+                   ,data = model_data
+                   ,family = 'binomial'
+                   ,method = 'glm'
+                   ,trControl = fitControl
+                   ,metric = "Kappa")
+
+# Get the confusion matrix
+glm.cm <- caret::confusionMatrix(glm.model$pred$pred, model_data$Label2, mode = "everything")
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(glm.model)
+model_results <- data.frame("Model" = "GLM", "ROC" = performance[,1], "Accuracy" = glm.cm[1], "Kappa" = glm.cm[2],"Sensitivity" = performance[,2], "Specificity" = performance[,3])
+```
+
+```{r glm_roc, echo = FALSE, out.width = '350px', fig.cap = 'GLM ROC Plot', fig.align = "center", fig.pos = 'H'}
+glm.ROC <- roc(model_data$Label2, glm.model$pred$Normal)
+plot(glm.ROC, col = "blue")
+auc(glm.ROC)
+
+# Print model coefficients
+glm.model$finalModel$coefficients
+```
+
+The Kappa statistic (or value) is a metric that compares an Observed Accuracy with an Expected Accuracy (random chance). The kappa statistic is used not only to evaluate a single classifier, but also to evaluate classifiers amongst themselves. In addition, it takes into account random chance (agreement with a random classifier), which generally means it is less misleading than simply using accuracy as a metric (an Observed Accuracy of 80% is a lot less impressive with an Expected Accuracy of 75% versus an Expected Accuracy of 50%). Computation of Observed Accuracy and Expected Accuracy is integral to comprehension of the kappa statistic, and is most easily illustrated through use of a confusion matrix. Lets begin with a simple confusion matrix from a simple binary classification of Cats and Dogs [@82187]

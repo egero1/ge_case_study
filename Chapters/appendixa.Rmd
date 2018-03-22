@@ -1,0 +1,10 @@
+\subsection{Summary Statistics for Predictors} 
+
+```{r summaries, echo = FALSE, comment = NA}
+
+stats <- basicStats(use_data[-c(40,41)])[c('Mean', 'Median', 'Stdev', 'Minimum', 'Maximum', 'NAs'),]
+
+kable(round(t(stats), 2), booktabs = TRUE) %>% 
+        kable_styling(font_size = 8, latex_options = c('striped', 'scale_down', 'hold_position'))
+
+```
