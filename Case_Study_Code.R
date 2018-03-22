@@ -1,8 +1,8 @@
 ## Eric Gero
 ## eric.gero@ge.com
 
-setwd("~/Documents/R_Projects/GE_Case_Study")
-
+#setwd("~/Documents/R_Projects/GE_Case_Study")
+setwd("~/R_Projects/ge_case_study")
 # Define functions
 
 # Needed to load rJava
@@ -14,7 +14,7 @@ library(dplyr)
 library(caret)
 library(randomForest)
 library(ggplot2)
-library(reshape2)
+#library(reshape2)
 library(corrplot)
 library(fBasics)
 library(rpart)
@@ -130,7 +130,7 @@ for(var in 1:length(use_data[-c(40, 41)])) {
 
 naive <- rpart(Label2 ~., data = use_data)
 rpart.plot(naive)
-naive.pred <- predict(navie, use_, type = 'class')
+naive.pred <- predict(naive, use_data, type = 'class')
 
 cm <- confusionMatrix(naive.pred, use_data$Label2, positive = 'Normal')
 
@@ -263,10 +263,10 @@ fitControl <- trainControl(method = "LOOCV"
 # Third model is a k-Nearest Neighbor
 set.seed(1234)
 knn.model <- caret::train(Label2 ~ .
-                          ,data = model_data 
+                          ,data = use_data 
                           ,method = "knn"
                           ,trControl = fitControl
-                          ,metric = "Kappa" 
+                          ,metric = "ROC" 
                           ,preProc = c("center", "scale")
                           ,tuneLength = 20)
 
@@ -277,12 +277,12 @@ knn.cm <- caret::confusionMatrix(knn.model$pred$pred, model_data$Label2, mode = 
 performance <- getTrainPerf(knn.model)
 knn_results <- data.frame("Model" = "kNN"
                             ,"ROC" = performance[,1]
-                            ,"Accuracy" = knn.cm[1]
-                            ,"Kappa" = knn.cm[2]
+                            ,"Accuracy" = knn.cm$overall[1]
+                            ,"Kappa" = knn.cm$overall[2]
                             ,"Sensitivity" = performance[,2]
                             ,"Specificity" = performance[,3])
 
-knn.ROC <- roc(model_data$Label2, knn.model$pred$Normal)
+knn.ROC <- roc(model_data$Label2, knn.model$pred$Abnormal)
 plot(knn.ROC, col = "blue")
 auc(knn.ROC)
 
