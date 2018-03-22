@@ -1,8 +1,8 @@
 ## Eric Gero
 ## eric.gero@ge.com
 
-#setwd("~/Documents/R_Projects/GE_Case_Study")
-setwd("~/R_Projects/ge_case_study")
+setwd("~/Documents/R_Projects/GE_Case_Study")
+
 # Define functions
 
 # Needed to load rJava
@@ -20,6 +20,7 @@ library(fBasics)
 library(rpart)
 library(rpart.plot)
 library(pROC)
+library(klaR)
 
 ###############################################################################
 # Load data and prepare dataset
@@ -130,7 +131,7 @@ for(var in 1:length(use_data[-c(40, 41)])) {
 
 naive <- rpart(Label2 ~., data = use_data)
 rpart.plot(naive)
-naive.pred <- predict(naive, use_data, type = 'class')
+naive.pred <- predict(navie, use_, type = 'class')
 
 cm <- confusionMatrix(naive.pred, use_data$Label2, positive = 'Normal')
 
@@ -177,6 +178,8 @@ compare model data to low_corr_lc
 # https://www.analyticsvidhya.com/blog/2016/12/practical-guide-to-implement-machine-learning-with-caret-package-in-r-with-practice-problem/
 ###############################################################################
 
+train_data <- use_data_lc
+
 # Set up training conditions - must use LOOCV
 fitControl <- trainControl(method = "LOOCV"
                            ,classProbs = TRUE 
@@ -186,35 +189,40 @@ fitControl <- trainControl(method = "LOOCV"
 # First model is a Generalized Linear Model
 set.seed(1234)
 glm.model <- caret::train(Label2 ~.
-                   ,data = model_data
-                   ,family = 'binomial'
-                   ,method = 'glm'
-                   ,trControl = fitControl
-                   ,metric = "ROC")
+                          ,data = train_data
+                          ,family = 'binomial'
+                          ,method = 'glm'
+                          ,trControl = fitControl
+                          ,metric = "ROC")
 
 # Get the confusion matrix
-glm.cm <- caret::confusionMatrix(glm.model$pred$pred, model_data$Label2, mode = "everything")
+glm.cm <- caret::confusionMatrix(glm.model$pred$pred, glm.model$pred$obs, mode = "everything")
 
 # Get the performance metrics from the model and save for comparison
 performance <- getTrainPerf(glm.model)
 glm_results <- data.frame("Model" = "GLM"
-                            ,"ROC" = performance[,1]
-                            ,"Accuracy" = glm.cm$overall[1]
-                            ,"Kappa" = glm.cm$overall[2]
-                            ,"Sensitivity" = performance[,2]
-                            ,"Specificity" = performance[,3])
+                          ,"Data" = "model_data"
+                          ,"ROC" = performance[,1]
+                          ,"Accuracy" = glm.cm$overall[1]
+                          ,"Kappa" = glm.cm$overall[2]
+                          ,"Sensitivity" = performance[,2]
+                          ,"Specificity" = performance[,3])
 
-glm.ROC <- roc(model_data$Label2, glm.model$pred$Normal)
+glm.ROC <- roc(glm.model$pred$obs, glm.model$pred$Normal)
 plot(glm.ROC, col = "blue")
 auc(glm.ROC)
 
 # Print model coefficients
 glm.model$finalModel$coefficients
 
+final_results <- rbind(final_results, glm_results)
+saveRDS(final_results, "final_results.rds")
 ###############################################################################
 # SVM - LOOCV Caret
 # https://stats.stackexchange.com/questions/136274/leave-one-subject-out-cv-method
 ###############################################################################
+
+train_data <- use_data
 
 # Set up training conditions - must use LOOCV
 fitControl <- trainControl(method = "LOOCV"
@@ -225,25 +233,24 @@ fitControl <- trainControl(method = "LOOCV"
 # Second model is a Support Vector Machine
 set.seed(1234)
 svm.model <- caret::train(Label2 ~ .
-                           ,data = model_data 
-                           ,method = "svmRadial"
-                           ,trControl = fitControl
-                           ,metric = "ROC" 
-                           ,preProc = c("center", "scale"))
+                          ,data = train_data 
+                          ,method = "svmRadial"
+                          ,trControl = fitControl
+                          ,metric = "Accuracy")
 
 # Get the confusion matrix
-svm.cm <- caret::confusionMatrix(svm.model$pred$pred, model_data$Label2, mode = "everything")
+svm.cm <- caret::confusionMatrix(svm.model$pred$pred, svm.model$pred$obs, mode = "everything")
 
 # Get the performance metrics from the model and save for comparison
 performance <- getTrainPerf(svm.model)
-svm_results <- data.frame("Model" = "SVM"
-                            ,"ROC" = performance[,1]
-                            ,"Accuracy" = svm.cm$overall[1]
-                            ,"Kappa" = svm.cm$overall[2]
-                            ,"Sensitivity" = performance[,2]
-                            ,"Specificity" = performance[,3])
+svm_results <- data.frame("Model" = "svmRadial"
+                          ,"ROC" = performance[,1]
+                          ,"Accuracy" = svm.cm$overall[1]
+                          ,"Kappa" = svm.cm$overall[2]
+                          ,"Sensitivity" = performance[,2]
+                          ,"Specificity" = performance[,3])
 
-svm.ROC <- roc(model_data$Label2, svm.model$pred$Normal)
+svm.ROC <- roc(svm.model$pred$obs, svm.model$pred$Normal)
 plot(svm.ROC, col = "blue")
 auc(svm.ROC)
 
@@ -254,6 +261,8 @@ svm.model$finalModel$coefficients
 # kNN - LOOCV Caret
 ###############################################################################
 
+train_data <- use_data
+
 # Set up training conditions - must use LOOCV
 fitControl <- trainControl(method = "LOOCV"
                            ,classProbs = TRUE 
@@ -263,7 +272,7 @@ fitControl <- trainControl(method = "LOOCV"
 # Third model is a k-Nearest Neighbor
 set.seed(1234)
 knn.model <- caret::train(Label2 ~ .
-                          ,data = use_data 
+                          ,data = train_data 
                           ,method = "knn"
                           ,trControl = fitControl
                           ,metric = "ROC" 
@@ -271,27 +280,65 @@ knn.model <- caret::train(Label2 ~ .
                           ,tuneLength = 20)
 
 # Get the confusion matrix
-knn.cm <- caret::confusionMatrix(knn.model$pred$pred, model_data$Label2, mode = "everything")
+knn.cm <- caret::confusionMatrix(knn.model$pred$pred, knn.model$pred$obs, mode = "everything")
 
 # Get the performance metrics from the model and save for comparison
 performance <- getTrainPerf(knn.model)
 knn_results <- data.frame("Model" = "kNN"
-                            ,"ROC" = performance[,1]
-                            ,"Accuracy" = knn.cm$overall[1]
-                            ,"Kappa" = knn.cm$overall[2]
-                            ,"Sensitivity" = performance[,2]
-                            ,"Specificity" = performance[,3])
+                          ,"Data" = "use_data" 
+                          ,"ROC" = performance[,1]
+                          ,"Accuracy" = knn.cm$overall[1]
+                          ,"Kappa" = knn.cm$overall[2]
+                          ,"Sensitivity" = performance[,2]
+                          ,"Specificity" = performance[,3])
 
-knn.ROC <- roc(model_data$Label2, knn.model$pred$Abnormal)
+knn.ROC <- roc(knn.model$pred$obs, knn.model$pred$Normal)
 plot(knn.ROC, col = "blue")
 auc(knn.ROC)
 
-# Print model coefficients
-knn.model$finalModel$coefficients
+# Add model results to dataframe for comparison
+final_results <- rbind(final_results, knn_results)
+saveRDS(final_results, "final_results.rds")
+###############################################################################
+# Naive Bayes- LOOCV Caret
+###############################################################################
 
+train_data <- use_data
+
+# Set up training conditions - must use LOOCV
+fitControl <- trainControl(method = "LOOCV"
+                           ,classProbs = TRUE 
+                           ,summaryFunction = twoClassSummary
+                           ,savePredictions = 'final')
+
+# Third model is a k-Nearest Neighbor
+set.seed(1234)
+nb.model <- caret::train(Label2 ~ .
+                         ,data = train_data 
+                         ,method = "nb"
+                         ,trControl = fitControl
+                         ,metric = "ROC")
+
+# Get the confusion matrix
+nb.cm <- caret::confusionMatrix(nb.model$pred$pred, train_data$Label2, mode = "everything")
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(nb.model)
+nb_results <- data.frame("Model" = "kNN"
+                         ,"ROC" = performance[,1]
+                         ,"Accuracy" = nb.cm$overall[1]
+                         ,"Kappa" = nb.cm$overall[2]
+                         ,"Sensitivity" = performance[,2]
+                         ,"Specificity" = performance[,3])
+
+nb.ROC <- roc(train_data$Label2, nb.model$pred$Normal)
+plot(nb.ROC, col = "blue")
+auc(nb.ROC)
+
+# Print model coefficients
+nb.model$finalModel$coefficients
 ##################################################################################################################
 
-naive bayes
 
 ###############################################################################
 # Random Forest - LOOCV  91.55 Acc 0.8111 Kappa
@@ -356,11 +403,11 @@ fitControl <- trainControl(method = "LOOCV",
                            summaryFunction = twoClassSummary)
 
 svm.model2 <- caret::train(Label2 ~ .
-                          ,data = model_data 
-                          ,method = "svmRadial"
-                          ,trControl = fitControl
-                          ,metric = "ROC" 
-                          ,preProc = c("center", "scale"))
+                           ,data = model_data 
+                           ,method = "svmRadial"
+                           ,trControl = fitControl
+                           ,metric = "ROC" 
+                           ,preProc = c("center", "scale"))
 
 # Save models to prevent the need to rerun
 saveRDS(svm.model, "loocv_svm.rds")
@@ -374,12 +421,12 @@ fitControl <- trainControl(classProbs = TRUE,
 test.results <- matrix(NA, nrow = dim(use_data)[1], ncol = 2)
 for(row in 1:dim(model_data[1])) {
         svm.final <- caret::train(Label2 ~ .
-                           ,data = model_data[-row,]
-                           ,method = "svmRadial"
-                           ,metric = "ROC" 
-                           ,preProc = c("center", "scale")
-                           ,trControl = fitControl
-                           ,tuneGrid = data.frame(C = 1, sigma = 0.01985963))
+                                  ,data = model_data[-row,]
+                                  ,method = "svmRadial"
+                                  ,metric = "ROC" 
+                                  ,preProc = c("center", "scale")
+                                  ,trControl = fitControl
+                                  ,tuneGrid = data.frame(C = 1, sigma = 0.01985963))
 }
 test.pred <- rep("Abnormal", dim(model_data)[1])
 test.pred[test.results[,2] > .5] = "Normal"
@@ -476,7 +523,7 @@ lapply(use_data, seq(1:39), tab_summary)
 
 
 
-        
+
 rbind(observations, 'Total' = sum(observations$Count))
 
 
@@ -514,11 +561,11 @@ fitControl <- trainControl(method = "LOOCV",
                            savePredictions = 'final')
 
 svm.model2 <- caret::train(Label2 ~ .
-                   ,data = use_data 
-                   ,method = "svmRadial"
-                   ,trControl = fitControl
-                   ,metric = "ROC" 
-                   ,preProc = c("center", "scale"))
+                           ,data = use_data 
+                           ,method = "svmRadial"
+                           ,trControl = fitControl
+                           ,metric = "ROC" 
+                           ,preProc = c("center", "scale"))
 
 
 saveRDS(svm.model, "loocv_svm.rds")
