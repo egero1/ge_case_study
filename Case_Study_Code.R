@@ -74,6 +74,14 @@ observations <- rbind(observations, c('Total', sum(observations$Count)))
 stats <- basicStats(use_data[-c(40,41)])[c("Mean", "Median", "Stdev", "Minimum", "Maximum", "NAs"),]
 t(round(stats, 2))
 
+# Verify that all labels for patients are the same
+checkLabel <- full %>%
+        group_by(PatientNumMasked) %>%
+        mutate(minLabel = min(Label)) %>%
+        mutate(maxLabel = max(Label)) %>%
+        mutate(count = length(PatientNumMasked)) %>%
+        select(PatientNumMasked, minLabel, maxLabel, count) 
+
 # Correlation between predictors
 corr <- cor(use_data[-c(40,41)])
 corrplot(corr, type = "upper", tl.cex = 0.5, tl.col = "blue", tl.srt = 45)
