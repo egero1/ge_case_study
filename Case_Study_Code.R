@@ -70,7 +70,6 @@ observations <- use_data %>%
 observations$Position <- as.character(observations$Position)
 observations <- rbind(observations, c('Total', sum(observations$Count)))
 
-
 # Summary 
 stats <- basicStats(use_data[-c(40,41)])[c("Mean", "Median", "Stdev", "Minimum", "Maximum", "NAs"),]
 t(round(stats, 2))
@@ -100,10 +99,6 @@ corrplot(low_corr, method = "color", col = col(200),
          sig.level = 0.01, insig = "blank", 
          # hide correlation coefficient on the principal diagonal
          diag = FALSE)
-
-
-
-
 
 # Scatter plot between predictors; scatter plot for response is pointless since it is categorical
 pairs(Label2 ~ ., data = use_data[c(1,41)])
@@ -165,6 +160,7 @@ plot(pref_variables, type = c("g", "o"))
 model_data <- use_data %>%
         select(predictors(pref_variables), Label2)
 
+compare model data to low_corr_lc
 ###############################################################################
 # GLM - LOOCV
 # http://www.rebeccabarter.com/blog/2017-11-17-caret_tutorial/
@@ -172,30 +168,36 @@ model_data <- use_data %>%
 # https://www.analyticsvidhya.com/blog/2016/12/practical-guide-to-implement-machine-learning-with-caret-package-in-r-with-practice-problem/
 ###############################################################################
 
+
 # Set up training conditions - must use LOOCV
-fitControl <- trainControl(method = "loocv"
+fitControl <- trainControl(method = "LOOCV"
+                           ,classProbs = TRUE 
                            ,summaryFunction = twoClassSummary
-                           ,classProbs = TRUE)
+                           ,savePredictions = 'final')
 
-#fitControl <- trainControl(method = "repeatedcv"
-#                           ,number = 1
-#                           ,repeats = 5
-#                           ,returnResamp="none"
-#                           ,classProbs = TRUE
-#                           ,savePredictions = 'final')
+# First model is a Generalized Linear Model
+set.seed(1234)
+glm.model <- caret::train(Label2 ~.
+                   ,data = model_data
+                   ,family = 'binomial'
+                   ,method = 'glm'
+                   ,trControl = fitControl
+                   ,metric = "Kappa")
 
-glm.model <- train(Label2 ~.
-             ,data = model_data
-             ,family = "binomial"
-             ,method = 'glm'
-             ,trControl = fitControl
-             ,metric = "ROC")
+# Get the confusion matrix
+glm.cm <- caret::confusionMatrix(glm.model$pred$pred, model_data$Label2, mode = "everything")
 
-glm_pred_test <- predict(glm.model, model_data)
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(glm.model)
+model_results <- data.frame("Model" = "GLM", "ROC" = performance[,1], "Accuracy" = glm.cm[1], "Kappa" = glm.cm[2],"Sensitivity" = performance[,2], "Specificity" = performance[,3])
 
-confusionMatrix(glm_pred_test, model_data$Label2, mode = 'everything', positive = 'Normal')
+glm.ROC <- roc(model_data$Label2, glm.model$pred$Normal)
+plot(glm.ROC, col = "blue")
+auc(svm.ROC)
 
-plot roc
+# Print model coefficients
+glm.model$finalModel$coefficients
+
 
 ###############################################################################
 # Random Forest - LOOCV  91.55 Acc 0.8111 Kappa

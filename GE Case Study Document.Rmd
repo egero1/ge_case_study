@@ -65,15 +65,13 @@ options(width = 400, kableExtra.latex.load_packages = FALSE, knitr.table.format 
 
 \FloatBarrier
 
-# Models
-
-Not sure why there is nothing here.  
+```{r child = 'Chapters/models.Rmd'}
+```
 
 \FloatBarrier
 
-# Conclusion  
-
-Not sure why there is nothing here.  
+```{r child = 'Chapters/conclusion.Rmd'}
+``` 
 
 \FloatBarrier
 
@@ -82,16 +80,8 @@ Not sure why there is nothing here.
 
 \appendix \section{Appendices}
 
-\subsection{Summary Statistics for Predictors} 
-
-```{r summaries, echo = FALSE, comment = NA}
-
-stats <- basicStats(use_data[-c(40,41)])[c('Mean', 'Median', 'Stdev', 'Minimum', 'Maximum', 'NAs'),]
-
-kable(round(t(stats), 2), booktabs = TRUE) %>% 
-        kable_styling(font_size = 8, latex_options = c('striped', 'scale_down', 'hold_position'))
-
-```
+```{r child = 'Chapters/appendixa.Rmd'}
+``` 
 
 \newpage
 
