@@ -19,6 +19,7 @@ library(corrplot)
 library(fBasics)
 library(rpart)
 library(rpart.plot)
+library(pROC)
 
 ###############################################################################
 # Load data and prepare dataset
@@ -189,7 +190,7 @@ glm.model <- caret::train(Label2 ~.
                    ,family = 'binomial'
                    ,method = 'glm'
                    ,trControl = fitControl
-                   ,metric = "Kappa")
+                   ,metric = "ROC")
 
 # Get the confusion matrix
 glm.cm <- caret::confusionMatrix(glm.model$pred$pred, model_data$Label2, mode = "everything")
@@ -198,14 +199,14 @@ glm.cm <- caret::confusionMatrix(glm.model$pred$pred, model_data$Label2, mode = 
 performance <- getTrainPerf(glm.model)
 glm_results <- data.frame("Model" = "GLM"
                             ,"ROC" = performance[,1]
-                            ,"Accuracy" = glm.cm[1]
-                            ,"Kappa" = glm.cm[2]
+                            ,"Accuracy" = glm.cm$overall[1]
+                            ,"Kappa" = glm.cm$overall[2]
                             ,"Sensitivity" = performance[,2]
                             ,"Specificity" = performance[,3])
 
 glm.ROC <- roc(model_data$Label2, glm.model$pred$Normal)
 plot(glm.ROC, col = "blue")
-auc(svm.ROC)
+auc(glm.ROC)
 
 # Print model coefficients
 glm.model$finalModel$coefficients
@@ -509,9 +510,10 @@ confusionMatrix(svm.finalResults$svm.pred, svm.finalResults$V5)
 
 fitControl <- trainControl(method = "LOOCV",
                            classProbs = TRUE, 
-                           summaryFunction = twoClassSummary)
+                           summaryFunction = twoClassSummary,
+                           savePredictions = 'final')
 
-svm.model <- caret::train(Label2 ~ .
+svm.model2 <- caret::train(Label2 ~ .
                    ,data = use_data 
                    ,method = "svmRadial"
                    ,trControl = fitControl
