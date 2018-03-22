@@ -320,23 +320,26 @@ nb.model <- caret::train(Label2 ~ .
                          ,metric = "ROC")
 
 # Get the confusion matrix
-nb.cm <- caret::confusionMatrix(nb.model$pred$pred, train_data$Label2, mode = "everything")
+nb.cm <- caret::confusionMatrix(nb.model$pred$pred, nb.model$pred$obs, mode = "everything")
 
 # Get the performance metrics from the model and save for comparison
 performance <- getTrainPerf(nb.model)
-nb_results <- data.frame("Model" = "kNN"
+nb_results <- data.frame("Model" = "Naive Bayes"
+                         ,"Data" = "use_data"
                          ,"ROC" = performance[,1]
                          ,"Accuracy" = nb.cm$overall[1]
                          ,"Kappa" = nb.cm$overall[2]
                          ,"Sensitivity" = performance[,2]
                          ,"Specificity" = performance[,3])
 
-nb.ROC <- roc(train_data$Label2, nb.model$pred$Normal)
+nb.ROC <- roc(nb.model$pred$obs, nb.model$pred$Normal)
 plot(nb.ROC, col = "blue")
 auc(nb.ROC)
 
-# Print model coefficients
-nb.model$finalModel$coefficients
+# Add model results to dataframe for comparison
+final_results <- rbind(final_results, nb_results)
+saveRDS(final_results, "final_results.rds")
+
 ##################################################################################################################
 
 
