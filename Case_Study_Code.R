@@ -290,6 +290,8 @@ knn.model$finalModel$coefficients
 
 ##################################################################################################################
 
+naive bayes
+
 ###############################################################################
 # Random Forest - LOOCV  91.55 Acc 0.8111 Kappa
 # https://machinelearningmastery.com/tune-machine-learning-algorithms-in-r/
