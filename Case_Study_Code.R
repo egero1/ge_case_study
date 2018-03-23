@@ -201,7 +201,7 @@ glm.cm <- caret::confusionMatrix(glm.model$pred$pred, glm.model$pred$obs, mode =
 # Get the performance metrics from the model and save for comparison
 performance <- getTrainPerf(glm.model)
 glm_results <- data.frame("Model" = "GLM"
-                          ,"Data" = "model_data"
+                          ,"Data" = "use_data_lc"
                           ,"ROC" = performance[,1]
                           ,"Accuracy" = glm.cm$overall[1]
                           ,"Kappa" = glm.cm$overall[2]
@@ -215,14 +215,21 @@ auc(glm.ROC)
 # Print model coefficients
 glm.model$finalModel$coefficients
 
+# Add model results to dataframe for comparison
 final_results <- rbind(final_results, glm_results)
+
+# Save models in case we want to review them later
 saveRDS(final_results, "final_results.rds")
+saveRDS(glm.model, "glm_use_data.rds")
+saveRDS(glm.model, "glm_use_data_lc.rds")
+saveRDS(glm.model, "glm_model_data.rds")
+
 ###############################################################################
 # SVM - LOOCV Caret
 # https://stats.stackexchange.com/questions/136274/leave-one-subject-out-cv-method
 ###############################################################################
 
-train_data <- use_data
+train_data <- model_data
 
 # Set up training conditions - must use LOOCV
 fitControl <- trainControl(method = "LOOCV"
@@ -244,6 +251,7 @@ svm.cm <- caret::confusionMatrix(svm.model$pred$pred, svm.model$pred$obs, mode =
 # Get the performance metrics from the model and save for comparison
 performance <- getTrainPerf(svm.model)
 svm_results <- data.frame("Model" = "svmRadial"
+                          ,"Data" = "model_data"
                           ,"ROC" = performance[,1]
                           ,"Accuracy" = svm.cm$overall[1]
                           ,"Kappa" = svm.cm$overall[2]
@@ -257,11 +265,20 @@ auc(svm.ROC)
 # Print model coefficients
 svm.model$finalModel$coefficients
 
+# Add model results to dataframe for comparison
+final_results <- rbind(final_results, svm_results)
+
+# Save models in case we want to review them later
+saveRDS(final_results, "final_results.rds")
+saveRDS(svm.model, "svm_use_data.rds")
+saveRDS(svm.model, "svm_use_data_lc.rds")
+saveRDS(svm.model, "svm_model_data.rds")
+
 ###############################################################################
 # kNN - LOOCV Caret
 ###############################################################################
 
-train_data <- use_data
+train_data <- model_data
 
 # Set up training conditions - must use LOOCV
 fitControl <- trainControl(method = "LOOCV"
@@ -285,7 +302,7 @@ knn.cm <- caret::confusionMatrix(knn.model$pred$pred, knn.model$pred$obs, mode =
 # Get the performance metrics from the model and save for comparison
 performance <- getTrainPerf(knn.model)
 knn_results <- data.frame("Model" = "kNN"
-                          ,"Data" = "use_data" 
+                          ,"Data" = "model_data" 
                           ,"ROC" = performance[,1]
                           ,"Accuracy" = knn.cm$overall[1]
                           ,"Kappa" = knn.cm$overall[2]
@@ -298,12 +315,18 @@ auc(knn.ROC)
 
 # Add model results to dataframe for comparison
 final_results <- rbind(final_results, knn_results)
+
+# Save models in case we want to review them later
 saveRDS(final_results, "final_results.rds")
+saveRDS(knn.model, "knn_use_data.rds")
+saveRDS(knn.model, "knn_use_data_lc.rds")
+saveRDS(knn.model, "knn_model_data.rds")
+
 ###############################################################################
 # Naive Bayes- LOOCV Caret
 ###############################################################################
 
-train_data <- use_data
+train_data <- model_data
 
 # Set up training conditions - must use LOOCV
 fitControl <- trainControl(method = "LOOCV"
@@ -325,7 +348,7 @@ nb.cm <- caret::confusionMatrix(nb.model$pred$pred, nb.model$pred$obs, mode = "e
 # Get the performance metrics from the model and save for comparison
 performance <- getTrainPerf(nb.model)
 nb_results <- data.frame("Model" = "Naive Bayes"
-                         ,"Data" = "use_data"
+                         ,"Data" = "model_data"
                          ,"ROC" = performance[,1]
                          ,"Accuracy" = nb.cm$overall[1]
                          ,"Kappa" = nb.cm$overall[2]
@@ -338,7 +361,12 @@ auc(nb.ROC)
 
 # Add model results to dataframe for comparison
 final_results <- rbind(final_results, nb_results)
+
+# Save models in case we want to review them later
 saveRDS(final_results, "final_results.rds")
+saveRDS(nb.model, "nb_use_data.rds")
+saveRDS(nb.model, "nb_use_data_lc.rds")
+saveRDS(nb.model, "nb_model_data.rds")
 
 ##################################################################################################################
 

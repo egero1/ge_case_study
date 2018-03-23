@@ -64,6 +64,7 @@ options(width = 400, kableExtra.latex.load_packages = FALSE, knitr.table.format 
 ```
 
 \FloatBarrier
+check the variable plot.. 16 vars should be over 95%
 
 ```{r child = 'Chapters/models.Rmd'}
 ```
