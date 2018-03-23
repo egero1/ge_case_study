@@ -14,7 +14,6 @@ library(dplyr)
 library(caret)
 library(randomForest)
 library(ggplot2)
-#library(reshape2)
 library(corrplot)
 library(fBasics)
 library(rpart)
@@ -220,10 +219,11 @@ final_results <- rbind(final_results, glm_results)
 
 # Save models in case we want to review them later
 saveRDS(final_results, "final_results.rds")
-saveRDS(glm.model, "glm_use_data.rds")
-saveRDS(glm.model, "glm_use_data_lc.rds")
-saveRDS(glm.model, "glm_model_data.rds")
+saveRDS(glm.model, "Models/glm_use_data.rds")
+saveRDS(glm.model, "Models/glm_use_data_lc.rds")
+saveRDS(glm.model, "Models/glm_model_data.rds")
 
+fix final_results so it creates itself when empty
 ###############################################################################
 # SVM - LOOCV Caret
 # https://stats.stackexchange.com/questions/136274/leave-one-subject-out-cv-method
@@ -250,7 +250,7 @@ svm.cm <- caret::confusionMatrix(svm.model$pred$pred, svm.model$pred$obs, mode =
 
 # Get the performance metrics from the model and save for comparison
 performance <- getTrainPerf(svm.model)
-svm_results <- data.frame("Model" = "svmRadial"
+svm_results <- data.frame("Model" = "SVM"
                           ,"Data" = "model_data"
                           ,"ROC" = performance[,1]
                           ,"Accuracy" = svm.cm$overall[1]
@@ -270,9 +270,9 @@ final_results <- rbind(final_results, svm_results)
 
 # Save models in case we want to review them later
 saveRDS(final_results, "final_results.rds")
-saveRDS(svm.model, "svm_use_data.rds")
-saveRDS(svm.model, "svm_use_data_lc.rds")
-saveRDS(svm.model, "svm_model_data.rds")
+saveRDS(svm.model, "Models/svm_use_data.rds")
+saveRDS(svm.model, "Models/svm_use_data_lc.rds")
+saveRDS(svm.model, "Models/svm_model_data.rds")
 
 ###############################################################################
 # kNN - LOOCV Caret
@@ -318,9 +318,9 @@ final_results <- rbind(final_results, knn_results)
 
 # Save models in case we want to review them later
 saveRDS(final_results, "final_results.rds")
-saveRDS(knn.model, "knn_use_data.rds")
-saveRDS(knn.model, "knn_use_data_lc.rds")
-saveRDS(knn.model, "knn_model_data.rds")
+saveRDS(knn.model, "Models/knn_use_data.rds")
+saveRDS(knn.model, "Models/knn_use_data_lc.rds")
+saveRDS(knn.model, "Models/knn_model_data.rds")
 
 ###############################################################################
 # Naive Bayes- LOOCV Caret
@@ -364,12 +364,14 @@ final_results <- rbind(final_results, nb_results)
 
 # Save models in case we want to review them later
 saveRDS(final_results, "final_results.rds")
-saveRDS(nb.model, "nb_use_data.rds")
-saveRDS(nb.model, "nb_use_data_lc.rds")
-saveRDS(nb.model, "nb_model_data.rds")
+saveRDS(nb.model, "Models/nb_use_data.rds")
+saveRDS(nb.model, "Models/nb_use_data_lc.rds")
+saveRDS(nb.model, "Models/nb_model_data.rds")
 
 ##################################################################################################################
 
+
+#############junk
 
 ###############################################################################
 # Random Forest - LOOCV  91.55 Acc 0.8111 Kappa
@@ -542,20 +544,7 @@ checkLabel %>%
 
 
 
-#############junk
-male = data.frame(c(127,44,28,83,0,6,78,6,5,213,73,20,214,28,11)) # data from page 66
-ggplot(data = male, aes(x = "male", y = male)) + 
-        geom_boxplot() +
-        coord_cartesian(ylim = c(0, 150))
 
-
-lapply(use_data, seq(1:39), tab_summary)
-
-
-
-
-
-rbind(observations, 'Total' = sum(observations$Count))
 
 
 
@@ -581,24 +570,6 @@ svm.finalResults <- as.data.frame(cbind(svm.results, full$PatientNumMasked, svm.
 
 confusionMatrix(svm.finalResults$svm.pred, svm.finalResults$V5)
 
-###############################################################################
-# SVM - LOOCV Caret
-# https://stats.stackexchange.com/questions/136274/leave-one-subject-out-cv-method
-###############################################################################
 
-fitControl <- trainControl(method = "LOOCV",
-                           classProbs = TRUE, 
-                           summaryFunction = twoClassSummary,
-                           savePredictions = 'final')
-
-svm.model2 <- caret::train(Label2 ~ .
-                           ,data = use_data 
-                           ,method = "svmRadial"
-                           ,trControl = fitControl
-                           ,metric = "ROC" 
-                           ,preProc = c("center", "scale"))
-
-
-saveRDS(svm.model, "loocv_svm.rds")
 
 

@@ -22,7 +22,7 @@ output:
   html_document: 
         toc: true
         
-bibliography: bibliography.bib
+bibliography: Chapters/bibliography.bib
 ---
 
 ```{r setup, set-options, include=FALSE}
