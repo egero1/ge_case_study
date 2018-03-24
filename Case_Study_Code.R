@@ -50,7 +50,7 @@ full$Label2 <- ifelse(full$Label == 0, 'Normal', 'Abnormal')
 use_data <- full %>%
         mutate(Label2 = factor(Label2)) %>%
         mutate(Position = factor(Position)) %>% 
-        select(-PatientNumMasked, -Label)
+        dplyr::select(-PatientNumMasked, -Label)
 
 # Create training and test datasets
 trainIndex <- createDataPartition(use_data$Label2, p = 0.7, list = FALSE)
@@ -81,7 +81,7 @@ checkLabel <- full %>%
         mutate(minLabel = min(Label)) %>%
         mutate(maxLabel = max(Label)) %>%
         mutate(count = length(PatientNumMasked)) %>%
-        select(PatientNumMasked, minLabel, maxLabel, count) 
+        dplyr::select(PatientNumMasked, minLabel, maxLabel, count) 
 
 # Correlation between predictors
 corr <- cor(use_data[-c(40,41)])
@@ -96,7 +96,7 @@ highly_correlated <- data.frame("Correlated Variables 1" = colnames(use_data[hig
 
 use_data_lc <- use_data[,-highCorrelation]
 low_corr <- use_data_lc %>%
-        select(-Position, -Label2)
+        dplyr::select(-Position, -Label2)
 low_corr<- cor(low_corr)
 
 col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))

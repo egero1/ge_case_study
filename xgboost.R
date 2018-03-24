@@ -1,4 +1,4 @@
-library(mlr)
+#library(mlr)
 library(data.table)
 library(dplyr)
 library(xgboost)
@@ -117,3 +117,18 @@ xgb_pred_ht_all <- factor(xgb_pred_ht_all,
 p <- xgb.plot.multi.trees(model = xgb_ht, 
                           features_keep = 3)
 print(p)
+
+
+
+
+
+################
+
+param <- list("objective" = "multi:softprob",
+              "eval_metric" = "mlogloss",
+              "num_class" = 12)
+cv.nround <- 11
+cv.nfold <- 5
+mdcv <-xgb.cv(data=dtrain,params = param,nthread=6,nfold = cv.nfold,nrounds = cv.nround,verbose = T)
+
+md <-xgb.train(data=dtrain,params = param,nround = 80,watchlist = list(train=dtrain,test=dtest),nthread=6)
