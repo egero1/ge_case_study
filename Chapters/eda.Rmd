@@ -17,6 +17,8 @@ kable(observations, caption = "Lung Segment Observations", booktabs = TRUE) %>%
 
 Talk about checking to make sure labels for all patient ids are the same across tabs.
 
+variables in use_data_lc are quite different than those selected by rfe
+
 ```{r check_labels, echo = FALSE}
 
 # Verify that all labels for patients are the same

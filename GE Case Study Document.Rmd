@@ -27,9 +27,13 @@ bibliography: Chapters/bibliography.bib
 
 ```{r setup, set-options, include=FALSE}
 
-knitr::opts_chunk$set(echo=FALSE,
-               cache=TRUE, autodep=TRUE, cache.comments=FALSE,
-               message=FALSE, warning=FALSE, tidy = FALSE)
+knitr::opts_chunk$set(echo=FALSE
+                      ,cache=TRUE
+                      ,autodep=TRUE
+                      ,cache.comments=FALSE
+                      ,message=FALSE
+                      ,warning=FALSE
+                      ,tidy = FALSE)
 options(width = 400, kableExtra.latex.load_packages = FALSE, knitr.table.format = "latex")
 
 ```
