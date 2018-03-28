@@ -14,7 +14,6 @@ library(dplyr)
 library(caret)
 library(randomForest)
 library(ggplot2)
-#library(reshape2)
 library(corrplot)
 library(fBasics)
 library(rpart)
@@ -51,7 +50,7 @@ full$Label2 <- ifelse(full$Label == 0, 'Normal', 'Abnormal')
 use_data <- full %>%
         mutate(Label2 = factor(Label2)) %>%
         mutate(Position = factor(Position)) %>% 
-        select(-PatientNumMasked, -Label)
+        dplyr::select(-PatientNumMasked, -Label)
 
 # Create training and test datasets
 trainIndex <- createDataPartition(use_data$Label2, p = 0.7, list = FALSE)
@@ -82,7 +81,7 @@ checkLabel <- full %>%
         mutate(minLabel = min(Label)) %>%
         mutate(maxLabel = max(Label)) %>%
         mutate(count = length(PatientNumMasked)) %>%
-        select(PatientNumMasked, minLabel, maxLabel, count) 
+        dplyr::select(PatientNumMasked, minLabel, maxLabel, count) 
 
 # Correlation between predictors
 corr <- cor(use_data[-c(40,41)])
@@ -97,7 +96,7 @@ highly_correlated <- data.frame("Correlated Variables 1" = colnames(use_data[hig
 
 use_data_lc <- use_data[,-highCorrelation]
 low_corr <- use_data_lc %>%
-        select(-Position, -Label2)
+        dplyr::select(-Position, -Label2)
 low_corr<- cor(low_corr)
 
 col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
@@ -201,7 +200,7 @@ glm.cm <- caret::confusionMatrix(glm.model$pred$pred, glm.model$pred$obs, mode =
 # Get the performance metrics from the model and save for comparison
 performance <- getTrainPerf(glm.model)
 glm_results <- data.frame("Model" = "GLM"
-                          ,"Data" = "model_data"
+                          ,"Data" = "use_data_lc"
                           ,"ROC" = performance[,1]
                           ,"Accuracy" = glm.cm$overall[1]
                           ,"Kappa" = glm.cm$overall[2]
@@ -215,8 +214,16 @@ auc(glm.ROC)
 # Print model coefficients
 glm.model$finalModel$coefficients
 
+# Add model results to dataframe for comparison
 final_results <- rbind(final_results, glm_results)
+
+# Save models in case we want to review them later
 saveRDS(final_results, "final_results.rds")
+saveRDS(glm.model, "Models/glm_use_data.rds")
+saveRDS(glm.model, "Models/glm_use_data_lc.rds")
+saveRDS(glm.model, "Models/glm_model_data.rds")
+
+fix final_results so it creates itself when empty
 ###############################################################################
 # SVM - LOOCV Caret
 # https://stats.stackexchange.com/questions/136274/leave-one-subject-out-cv-method
@@ -243,7 +250,8 @@ svm.cm <- caret::confusionMatrix(svm.model$pred$pred, svm.model$pred$obs, mode =
 
 # Get the performance metrics from the model and save for comparison
 performance <- getTrainPerf(svm.model)
-svm_results <- data.frame("Model" = "svmRadial"
+svm_results <- data.frame("Model" = "SVM - RBF"
+                          ,"Data" = "use_data"
                           ,"ROC" = performance[,1]
                           ,"Accuracy" = svm.cm$overall[1]
                           ,"Kappa" = svm.cm$overall[2]
@@ -254,14 +262,20 @@ svm.ROC <- roc(svm.model$pred$obs, svm.model$pred$Normal)
 plot(svm.ROC, col = "blue")
 auc(svm.ROC)
 
-# Print model coefficients
-svm.model$finalModel$coefficients
+# Add model results to dataframe for comparison
+final_results <- rbind(final_results, svm_results)
+
+# Save models in case we want to review them later
+saveRDS(final_results, "final_results.rds")
+saveRDS(svm.model, "Models/svm_use_data.rds")
+saveRDS(svm.model, "Models/svm_use_data_lc.rds")
+saveRDS(svm.model, "Models/svm_model_data.rds")
 
 ###############################################################################
 # kNN - LOOCV Caret
 ###############################################################################
 
-train_data <- use_data
+train_data <- use_data_lc
 
 # Set up training conditions - must use LOOCV
 fitControl <- trainControl(method = "LOOCV"
@@ -285,7 +299,7 @@ knn.cm <- caret::confusionMatrix(knn.model$pred$pred, knn.model$pred$obs, mode =
 # Get the performance metrics from the model and save for comparison
 performance <- getTrainPerf(knn.model)
 knn_results <- data.frame("Model" = "kNN"
-                          ,"Data" = "use_data" 
+                          ,"Data" = "use_data_lc" 
                           ,"ROC" = performance[,1]
                           ,"Accuracy" = knn.cm$overall[1]
                           ,"Kappa" = knn.cm$overall[2]
@@ -298,7 +312,13 @@ auc(knn.ROC)
 
 # Add model results to dataframe for comparison
 final_results <- rbind(final_results, knn_results)
+
+# Save models in case we want to review them later
 saveRDS(final_results, "final_results.rds")
+saveRDS(knn.model, "Models/knn_use_data.rds")
+saveRDS(knn.model, "Models/knn_use_data_lc.rds")
+saveRDS(knn.model, "Models/knn_model_data.rds")
+
 ###############################################################################
 # Naive Bayes- LOOCV Caret
 ###############################################################################
@@ -325,7 +345,7 @@ nb.cm <- caret::confusionMatrix(nb.model$pred$pred, nb.model$pred$obs, mode = "e
 # Get the performance metrics from the model and save for comparison
 performance <- getTrainPerf(nb.model)
 nb_results <- data.frame("Model" = "Naive Bayes"
-                         ,"Data" = "use_data"
+                         ,"Data" = "model_data"
                          ,"ROC" = performance[,1]
                          ,"Accuracy" = nb.cm$overall[1]
                          ,"Kappa" = nb.cm$overall[2]
@@ -338,10 +358,12 @@ auc(nb.ROC)
 
 # Add model results to dataframe for comparison
 final_results <- rbind(final_results, nb_results)
+
+# Save models in case we want to review them later
 saveRDS(final_results, "final_results.rds")
-
-##################################################################################################################
-
+saveRDS(nb.model, "Models/nb_use_data.rds")
+saveRDS(nb.model, "Models/nb_use_data_lc.rds")
+saveRDS(nb.model, "Models/nb_model_data.rds")
 
 ###############################################################################
 # Random Forest - LOOCV  91.55 Acc 0.8111 Kappa
@@ -349,13 +371,120 @@ saveRDS(final_results, "final_results.rds")
 # https://www.analyticsvidhya.com/blog/2016/12/practical-guide-to-implement-machine-learning-with-caret-package-in-r-with-practice-problem/
 ###############################################################################
 
+library(parallel)
+library(doParallel)
+cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
+registerDoParallel(cluster)
 
-rf <- train(Label2 ~.
-            ,data = trainData
+train_data <- use_data_lc
+
+# Set up training conditions - must use LOOCV
+fitControl <- trainControl(method = "LOOCV"
+                           ,classProbs = TRUE 
+                           ,summaryFunction = twoClassSummary
+                           ,savePredictions = 'final'
+                           ,allowParallel = TRUE)
+
+# Third model is a k-Nearest Neighbor
+set.seed(1234)
+rf.model <- caret::train(Label2 ~.
+            ,data = train_data
             ,method = 'rf'
             ,trControl = fitControl
-            ,metric = "ROC"
-            ,preProc = c("center", "scale"))
+            ,metric = "ROC")
+
+stopCluster(cluster)
+registerDoSEQ()
+
+rf.cm <- caret::confusionMatrix(rf.model$pred$pred, rf.model$pred$obs)
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(rf.model)
+rf_results <- data.frame("Model" = "Random Forest"
+                         ,"Data" = "use_data_lc"
+                         ,"ROC" = performance[,1]
+                         ,"Accuracy" = rf.cm$overall[1]
+                         ,"Kappa" = rf.cm$overall[2]
+                         ,"Sensitivity" = performance[,2]
+                         ,"Specificity" = performance[,3])
+
+rf.ROC <- roc(rf.model$pred$obs, rf.model$pred$Normal)
+plot(rf.ROC, col = "blue")
+auc(rf.ROC)
+
+# Add model results to dataframe for comparison
+final_results <- rbind(final_results, rf_results)
+
+# Save models in case we want to review them later
+saveRDS(final_results, "final_results.rds")
+saveRDS(rf.model, "Models/rf_use_data.rds")
+saveRDS(rf.model, "Models/rf_use_data_lc.rds")
+saveRDS(rf.model, "Models/rf_model_data.rds")
+
+###############################################################################
+# Nueral Network - LOOCV  
+# https://machinelearningmastery.com/tune-machine-learning-algorithms-in-r/
+# https://www.analyticsvidhya.com/blog/2016/12/practical-guide-to-implement-machine-learning-with-caret-package-in-r-with-practice-problem/
+###############################################################################
+
+library(parallel)
+library(doParallel)
+cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
+registerDoParallel(cluster)
+
+train_data <- model_data
+
+# Set up training conditions - must use LOOCV
+fitControl <- trainControl(method = "LOOCV"
+                           ,classProbs = TRUE 
+                           ,summaryFunction = twoClassSummary
+                           ,savePredictions = 'final'
+                           ,allowParallel = TRUE)
+
+# Third model is a k-Nearest Neighbor
+set.seed(1234)
+nnet.model <- caret::train(Label2 ~.
+                         ,data = train_data
+                         ,method = 'nnet'
+                         ,trControl = fitControl
+                         ,metric = "ROC")
+
+stopCluster(cluster)
+registerDoSEQ()
+
+nnet.cm <- caret::confusionMatrix(nnet.model$pred$pred, nnet.model$pred$obs)
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(rf.model)
+nnet_results <- data.frame("Model" = "Random Forest"
+                         ,"Data" = "model_data"
+                         ,"ROC" = performance[,1]
+                         ,"Accuracy" = nnet.cm$overall[1]
+                         ,"Kappa" = nnet.cm$overall[2]
+                         ,"Sensitivity" = performance[,2]
+                         ,"Specificity" = performance[,3])
+
+nnet.ROC <- roc(nnet.model$pred$obs, nnet.model$pred$Normal)
+plot(nnet.ROC, col = "blue")
+auc(nnet.ROC)
+
+# Add model results to dataframe for comparison
+final_results <- rbind(final_results, nnet_results)
+
+# Save models in case we want to review them later
+saveRDS(final_results, "final_results.rds")
+saveRDS(nnet.model, "Models/nnet_use_data.rds")
+saveRDS(nnet.model, "Models/nnet_use_data_lc.rds")
+saveRDS(nnet.model, "Models/nnet_model_data.rds")
+
+##################################################################################################################
+
+
+#############junk
+
+
+
+
 
 saveRDS(rf, "random_forest.rds")
 varImp(rf)
@@ -514,20 +643,7 @@ checkLabel %>%
 
 
 
-#############junk
-male = data.frame(c(127,44,28,83,0,6,78,6,5,213,73,20,214,28,11)) # data from page 66
-ggplot(data = male, aes(x = "male", y = male)) + 
-        geom_boxplot() +
-        coord_cartesian(ylim = c(0, 150))
 
-
-lapply(use_data, seq(1:39), tab_summary)
-
-
-
-
-
-rbind(observations, 'Total' = sum(observations$Count))
 
 
 
@@ -553,24 +669,6 @@ svm.finalResults <- as.data.frame(cbind(svm.results, full$PatientNumMasked, svm.
 
 confusionMatrix(svm.finalResults$svm.pred, svm.finalResults$V5)
 
-###############################################################################
-# SVM - LOOCV Caret
-# https://stats.stackexchange.com/questions/136274/leave-one-subject-out-cv-method
-###############################################################################
 
-fitControl <- trainControl(method = "LOOCV",
-                           classProbs = TRUE, 
-                           summaryFunction = twoClassSummary,
-                           savePredictions = 'final')
-
-svm.model2 <- caret::train(Label2 ~ .
-                           ,data = use_data 
-                           ,method = "svmRadial"
-                           ,trControl = fitControl
-                           ,metric = "ROC" 
-                           ,preProc = c("center", "scale"))
-
-
-saveRDS(svm.model, "loocv_svm.rds")
 
 

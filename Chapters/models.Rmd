@@ -1,5 +1,7 @@
 # Models
 
+used the caret package for all
+
 ```{r model_data, include = FALSE}
 
 control <- rfeControl(functions = rfFuncs
@@ -17,6 +19,7 @@ predictors(pref_variables)
 ```
 
 ```{r var_plot, echo = FALSE, out.width = '350px', fig.cap = 'Variable Selection', fig.align = "center", fig.pos = 'H'}
+
 plot(pref_variables, type = c("g", "o"))
 
 # Create a data set using the preferred variables
