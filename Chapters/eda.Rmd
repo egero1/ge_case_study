@@ -15,21 +15,31 @@ kable(observations, caption = "Lung Segment Observations", booktabs = TRUE) %>%
 
 ```
 
-Talk about checking to make sure labels for all patient ids are the same across tabs.
-
-variables in use_data_lc are quite different than those selected by rfe
-
 ```{r check_labels, echo = FALSE}
 
 # Verify that all labels for patients are the same
-checkLabel <- full %>%
+checklabel <- full %>%
         group_by(PatientNumMasked) %>%
         mutate(minLabel = min(Label)) %>%
         mutate(maxLabel = max(Label)) %>%
         mutate(count = length(PatientNumMasked)) %>%
-        select(PatientNumMasked, minLabel, maxLabel, count) 
+        dplyr::select(PatientNumMasked, minLabel, maxLabel, count) 
+
+# If the min and max are equal, they will be dropped.  If list is empty
+# then the label is consistent across data sets for all patients
+checklabel <- checklabel %>%
+        dplyr::filter(minLabel != maxLabel)
+
+checklabel <- ifelse(dim(checklabel)[1] == 0, 'no', dim(checklabel)[1])
 
 ```
+
+Since the lung images from each patient are broken into six segments and each tab contains the patient number and the label, it is possible that the labels for a patient do not match across the six segments. This is not much of an issue at the segment level, but it is important that it is taken into account if the data is rolled up or combined into a single table. If the label for any segement is 'Abnormal', then it should be considered that disease is present in the patient, regardless of the value of the other segment labels. It is confirmed that `r checklabel` patients have inconsistent label values.
+
+
+
+
+variables in use_data_lc are quite different than those selected by rfe
 
 The correlation plot in __Figure 2__ shows that some of the predictors have strong correlations with each other. This requires further investigation as high correlation among predictors can cause instability in the model. Generally, when two variables are highly correlated, it is best to remove one since the second is not providing new information.
 
@@ -58,7 +68,7 @@ kable(highly_correlated, caption = "Highly Correlated Variables", booktabs = TRU
 ```{r new_correlation, echo = FALSE, out.width = '350px', fig.cap = 'Correlation Matrix - Highly Correlated Variables Removed', fig.align = "center", fig.pos = 'H'}
 use_data_lc <- use_data[,-highCorrelation]
 low_corr <- use_data_lc %>%
-        select(-Position, -Label2)
+        select(-Position, -Label)
 low_corr<- cor(low_corr)
 
 col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
@@ -70,5 +80,24 @@ corrplot(low_corr, method = "color", col = col(200),
          sig.level = 0.01, insig = "blank", 
          # hide correlation coefficient on the principal diagonal
          diag = FALSE)
+
+```
+
+Talk about box plots here
+```{r boxplots, echo = FALSE, out.width = '350px', fig.cap = 'Boxplots', fig.align = "center", fig.pos = 'H'}
+
+# Check for outliers
+plots <- list(0)
+for(var in 3:4) {
+        p <- ggplot(data = use_data, aes(x = '', y = use_data[,var])) + 
+                geom_boxplot(color='red', fill='orange', alpha = 0.2) +
+                labs(title = paste('Outliers - ', colnames(use_data[var]))) +
+                ylab('Boxplot') +
+        coord_cartesian(ylim = c(min(use_data[,var]), max(use_data[,var])))
+        plots[[var-2]] <- p
+}
+
+grid.arrange(plots[[1]], plots[[2]], ncol = 2)
+
 
 ```

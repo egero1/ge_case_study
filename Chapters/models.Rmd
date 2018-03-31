@@ -24,7 +24,7 @@ plot(pref_variables, type = c("g", "o"))
 
 # Create a data set using the preferred variables
 model_data <- use_data %>%
-        select(predictors(pref_variables), Label2)
+        select(predictors(pref_variables), Label)
 
 ```
 
@@ -39,7 +39,7 @@ fitControl <- trainControl(method = "LOOCV"
 
 # First model is a Generalized Linear Model
 set.seed(1234)
-glm.model <- caret::train(Label2 ~.
+glm.model <- caret::train(Label ~.
                    ,data = model_data
                    ,family = 'binomial'
                    ,method = 'glm'
@@ -47,7 +47,7 @@ glm.model <- caret::train(Label2 ~.
                    ,metric = "Kappa")
 
 # Get the confusion matrix
-glm.cm <- caret::confusionMatrix(glm.model$pred$pred, model_data$Label2, mode = "everything")
+glm.cm <- caret::confusionMatrix(glm.model$pred$pred, model_data$Label, mode = "everything")
 
 # Get the performance metrics from the model and save for comparison
 performance <- getTrainPerf(glm.model)
@@ -55,7 +55,7 @@ model_results <- data.frame("Model" = "GLM", "ROC" = performance[,1], "Accuracy"
 ```
 
 ```{r glm_roc, echo = FALSE, out.width = '350px', fig.cap = 'GLM ROC Plot', fig.align = "center", fig.pos = 'H'}
-glm.ROC <- roc(model_data$Label2, glm.model$pred$Normal)
+glm.ROC <- roc(model_data$Label, glm.model$pred$Normal)
 plot(glm.ROC, col = "blue")
 auc(glm.ROC)
 

@@ -1,11 +1,46 @@
 #library(mlr)
+library(openxlsx)
 library(data.table)
 library(dplyr)
 library(xgboost)
 library(caret)
 
 
+###############################################################################
+# Load data and prepare dataset
+###############################################################################
 
+# Load data
+ru <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 1, colNames = TRUE)
+rm <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 2, colNames = TRUE)
+rl <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 3, colNames = TRUE)
+lu <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 4, colNames = TRUE)
+lm <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 5, colNames = TRUE)
+ll <- read.xlsx("Data/CollatedPneumoconiosisData-GE Internal.xlsx", 6, colNames = TRUE)
+
+ru$Position <- "Right Upper"
+rm$Position <- "Right Middle"
+rl$Position <- "Right Lower"
+lu$Position <- "Left Upper"
+lm$Position <- "Left Middle"
+ll$Position <- "Left Lower"
+
+# Combine all sections into one dataframe
+full <- rbind(ru, rm, rl, lu, lm, ll)
+
+# Set levels of the factor - makes it easier to read
+full$Label2 <- ifelse(full$Label == 0, 'Normal', 'Abnormal')
+
+# Prepare data set
+use_data <- full %>%
+        mutate(Label2 = factor(Label2)) %>%
+        mutate(Position = factor(Position)) %>% 
+        dplyr::select(-PatientNumMasked, -Label)
+
+# Create training and test datasets
+trainIndex <- createDataPartition(use_data$Label2, p = 0.7, list = FALSE)
+trainData <- use_data[trainIndex,]
+testData <- use_data[-trainIndex,]
 
 all_data <- use_data
 
@@ -38,7 +73,7 @@ dtest <- xgb.DMatrix(data = new_ts, label = ts_label)
 
 params <- list(booster = "gbtree"
                ,objective = "multi:softmax"
-               ,num_class = 23
+               ,num_class = 2
                ,eta = 0.3
                ,gamma = 0
                ,max_depth = 6
@@ -50,7 +85,7 @@ params <- list(booster = "gbtree"
 xgbcv <- xgb.cv(params = params
                 ,data = dtrain
                 ,nrounds = 200
-                ,nfold = 2606
+                ,nfold = 5
                 ,showsd = TRUE
                 ,stratified = TRUE
                 ,print_every_n = 10
@@ -64,7 +99,7 @@ xgbcv$best_iteration
 # first default - model training
 xgb_ht <- xgb.train (params = params
                      ,data = dtrain
-                     ,nrounds = 54
+                     ,nrounds = 37
                      ,watchlist = list(val = dtest, train = dtrain)
                      ,print_every_n = 10
                      ,early_stopping_rounds = 10
