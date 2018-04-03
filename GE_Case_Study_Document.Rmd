@@ -61,17 +61,12 @@ options(width = 400, kableExtra.latex.load_packages = FALSE, knitr.table.format 
 ```{r child = 'Chapters/eda.Rmd'}
 ```
 
-
 \FloatBarrier
 
-```{r child = 'Chapters/naivemodel.Rmd'}
-```
-
-\FloatBarrier
 check the variable plot.. 16 vars should be over 95%
 
-\\```{r child = 'Chapters/models.Rmd'}
-\\```
+```{r child = 'Chapters/models.Rmd'}
+```
 
 \FloatBarrier
 
@@ -86,6 +81,11 @@ check the variable plot.. 16 vars should be over 95%
 \appendix \section{Appendices}
 
 ```{r child = 'Chapters/appendixa.Rmd'}
+``` 
+
+\newpage
+
+```{r child = 'Chapters/appendixb.Rmd'}
 ``` 
 
 \newpage

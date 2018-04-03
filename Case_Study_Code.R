@@ -125,6 +125,7 @@ for(var in 3:4) {
                 geom_boxplot(color='red', fill='orange', alpha = 0.2) +
                 labs(title = paste('Outliers - ', colnames(use_data[var]))) +
                 ylab('Boxplot') +
+                xlab('') + 
         coord_cartesian(ylim = c(min(use_data[,var]), max(use_data[,var])))
         plots[[var-2]] <- p
 }
@@ -135,9 +136,9 @@ grid.arrange(plots[[1]], plots[[2]], ncol = 2)
 # Exploratory Model and Important Variables
 ###############################################################################
 
-naive <- rpart(Label2 ~., data = use_data)
+naive <- rpart(Label ~., data = use_data)
 rpart.plot(naive)
-naive.pred <- predict(navie, use_, type = 'class')
+naive.pred <- predict(naive, use_, type = 'class')
 
 cm <- confusionMatrix(naive.pred, use_data$Label2, positive = 'Normal')
 

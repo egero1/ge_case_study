@@ -28,7 +28,7 @@ model_data <- use_data %>%
 
 ```
 
-
+\subsection{Generalized Linear Model} 
 ```{r glm, echo = FALSE}
 
 # Set up training conditions - must use LOOCV
@@ -62,5 +62,7 @@ auc(glm.ROC)
 # Print model coefficients
 glm.model$finalModel$coefficients
 ```
+
+\subsection{Support Vector Machine} 
 
 The Kappa statistic (or value) is a metric that compares an Observed Accuracy with an Expected Accuracy (random chance). The kappa statistic is used not only to evaluate a single classifier, but also to evaluate classifiers amongst themselves. In addition, it takes into account random chance (agreement with a random classifier), which generally means it is less misleading than simply using accuracy as a metric (an Observed Accuracy of 80% is a lot less impressive with an Expected Accuracy of 75% versus an Expected Accuracy of 50%). Computation of Observed Accuracy and Expected Accuracy is integral to comprehension of the kappa statistic, and is most easily illustrated through use of a confusion matrix. Lets begin with a simple confusion matrix from a simple binary classification of Cats and Dogs [@82187]
