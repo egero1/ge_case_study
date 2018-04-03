@@ -165,7 +165,7 @@ tree.cm$overall
 
 control <- rfeControl(functions = rfFuncs
                       ,method = "repeatedcv"
-                      ,number = 3
+                      ,number = 5
                       ,verbose = FALSE)
 
 pref_variables <- rfe(use_data[-40], use_data[,40], rfeControl = control)
