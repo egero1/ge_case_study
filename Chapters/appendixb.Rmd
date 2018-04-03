@@ -1,0 +1,19 @@
+\subsection{Box Plots for Predictors} 
+
+```{r all_box_plots, echo = FALSE, comment = NA}
+
+# Check for outliers - Boxplots
+plots <- list(0)
+for(var in 3:4) {
+        p <- ggplot(data = use_data, aes(x = '', y = use_data[,var])) + 
+                geom_boxplot(color='red', fill='orange', alpha = 0.2) +
+                labs(title = paste('Outliers - ', colnames(use_data[var]))) +
+                ylab('Boxplot') +
+                xlab('') + 
+        coord_cartesian(ylim = c(min(use_data[,var]), max(use_data[,var])))
+        plots[[var-2]] <- p
+}
+
+grid.arrange(plots[[1]], plots[[2]], ncol = 2)
+
+```

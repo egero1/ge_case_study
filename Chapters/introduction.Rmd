@@ -15,6 +15,7 @@ library(rpart)
 library(rpart.plot)
 library(kableExtra)
 library(pROC)
+library(gridExtra)
 ```
 
 ```{r data_prep, include = FALSE}
@@ -37,14 +38,12 @@ ll$Position <- "LeftLower"
 # Combine all sections into one dataframe
 full <- rbind(ru, rm, rl, lu, lm, ll)
 
-# Set levels of the factor - makes it easier to read
-full$Label2 <- ifelse(full$Label == 0, 'Normal', 'Abnormal')
-
 # Prepare data set
+# Set levels of the factor - makes it easier to read
 use_data <- full %>%
-        mutate(Label2 = factor(Label2)) %>%
+        mutate(Label = recode(Label, '0' = 'Normal', '1' = 'Abnormal')) %>%
         mutate(Position = factor(Position)) %>% 
-        select(-PatientNumMasked, -Label)
+        dplyr::select(-PatientNumMasked)
 
 ```
 

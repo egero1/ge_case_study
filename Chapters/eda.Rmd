@@ -11,26 +11,32 @@ observations <- use_data %>%
 observations$Position <- as.character(observations$Position)
 observations <- rbind(observations, c('Total', sum(observations$Count)))
 kable(observations, caption = "Lung Segment Observations", booktabs = TRUE) %>% 
-        kable_styling(font_size = 8,  latex_options = c("striped"))
+        kable_styling(font_size = 8,  latex_options = c("striped", "hold_position"))
 
 ```
-
-Talk about checking to make sure labels for all patient ids are the same across tabs.
-
-variables in use_data_lc are quite different than those selected by rfe
 
 ```{r check_labels, echo = FALSE}
 
 # Verify that all labels for patients are the same
-checkLabel <- full %>%
+checklabel <- full %>%
         group_by(PatientNumMasked) %>%
         mutate(minLabel = min(Label)) %>%
         mutate(maxLabel = max(Label)) %>%
         mutate(count = length(PatientNumMasked)) %>%
-        select(PatientNumMasked, minLabel, maxLabel, count) 
+        dplyr::select(PatientNumMasked, minLabel, maxLabel, count) 
+
+# If the min and max are equal, they will be dropped.  If list is empty
+# then the label is consistent across data sets for all patients
+checklabel <- checklabel %>%
+        dplyr::filter(minLabel != maxLabel)
+
+checklabel <- ifelse(dim(checklabel)[1] == 0, 'no', dim(checklabel)[1])
 
 ```
 
+Since the lung images from each patient are broken into six segments and each tab contains the patient number and the label, it is possible that the labels for a patient do not match across the six segments. This is not much of an issue at the segment level, but it is important that it is taken into account if the data is rolled up or combined into a single table. If the label for any segement is 'Abnormal', then it should be considered that disease is present in the patient, regardless of the value of the other segment labels. It is confirmed that `r checklabel` patients have inconsistent label values.
+
+\subsection{Correlation - Predictors} 
 The correlation plot in __Figure 2__ shows that some of the predictors have strong correlations with each other. This requires further investigation as high correlation among predictors can cause instability in the model. Generally, when two variables are highly correlated, it is best to remove one since the second is not providing new information.
 
 ```{r correlation, echo = FALSE, out.width = '350px', fig.cap = 'Correlation Matrix', fig.align = "center", fig.pos = 'H'}
@@ -55,10 +61,12 @@ kable(highly_correlated, caption = "Highly Correlated Variables", booktabs = TRU
 
 ```
 
+In __Figure 3__, the variables having a pair-wise correlation greater than 0.5 or less than -0.5 have been removed. Since some modeling methods are more sensitive to multicollinearity than others, a new data set will be created from the remaining variables. This reduces the count of predictors from 40 to 12. 
+
 ```{r new_correlation, echo = FALSE, out.width = '350px', fig.cap = 'Correlation Matrix - Highly Correlated Variables Removed', fig.align = "center", fig.pos = 'H'}
 use_data_lc <- use_data[,-highCorrelation]
 low_corr <- use_data_lc %>%
-        select(-Position, -Label2)
+        select(-Position, -Label)
 low_corr<- cor(low_corr)
 
 col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
@@ -72,3 +80,68 @@ corrplot(low_corr, method = "color", col = col(200),
          diag = FALSE)
 
 ```
+
+\subsection{Outliers} 
+
+An outlier is an observation that is much smaller or larger than other values. It is important to identify potential outliers since they can skew or add bias to a model. The box plots __Figure 4__ provide an easy way to determine if outliers are present for a variable. The box plots show the minimum and maximum values on the vertical line, and the box which are the boundaries for the 1st and 3rd quartiles. The horizontal line in the middle of the box is the median. Note that in the box plot for *Hist_0_0_0_Kurtosis*, the median is very close to the 1st and 3rd quartiles. Box plots for all predictors were created and reviewed, but were not provided to conserve space. Most variables display patterns similar to those seen in __Figure 4__. The code to generate the remaining box plots is provided in **Appendix A.2**.  
+
+The potential outliers are the individual data points that fall above or below the box, or 1st and 3rd quartiles. While these points can be influential, their full impact is difficult to determine in advance. The traditional processes for handling outliers includes removing them or capping their values. Since no information was provided on the valid range of each variable, it will be assumed that all data points are valid. Additionally, some modeling methods are less sensitive to outliers than others, so the potential impact of these points will be consisdered for each model.
+
+```{r boxplots, echo = FALSE, out.width = '350px', fig.cap = 'Box plots', fig.align = "center", fig.pos = 'H'}
+
+# Check for outliers
+plots <- list(0)
+for(var in 3:4) {
+        p <- ggplot(data = use_data, aes(x = '', y = use_data[,var])) + 
+                geom_boxplot(color='red', fill='orange', alpha = 0.2) +
+                labs(title = paste('Outliers - ', colnames(use_data[var]))) +
+                ylab('Boxplot') +
+                xlab('') + 
+        coord_cartesian(ylim = c(min(use_data[,var]), max(use_data[,var])))
+        plots[[var-2]] <- p
+}
+
+grid.arrange(plots[[1]], plots[[2]], ncol = 2)
+
+
+```
+
+\subsection{Naive Model}
+
+A simple decision tree was used to fit a naive model. This model uses the full data set containing all precitors and with no transformations or scaling. The purpose of this model is to provide a baseline for the models that will be built since any improvements made to the data set or modeling method should result in a better performing model. __Table 3__ provides the simple confusion matrix for the model. The model predicted 'Abnormal' for 750 observations when the true result actually was 'Abnormal', and predicted 'Normal' for 1,582 observations when the true result actually was 'Normal'. However, the model incorrectly classified 194 observations as 'Abnormal' when the true result was actually 'Normal', and 80 observations as 'Abnormal' when the true result was 'Normal'.
+
+```{r naive_cm, echo = FALSE, , comment = NA}
+tree <- rpart(Label ~., data = use_data)
+
+tree.pred <- predict(tree, use_data, type = 'class')
+tree.cm <- confusionMatrix(tree.pred, use_data$Label, positive = 'Normal')
+
+kable(tree.cm$table, caption = "Confusion Matrix", booktabs = TRUE) %>% 
+        kable_styling(font_size = 8, position = 'float_right', latex_options = c("striped", "hold_position"))
+```
+
+The evaluation metrics for the naive model are provided in __Table 4__. Some of these metrics will be used to evaluate the models that are built, so it is worth discussing them here to ensure they are well understood.
+
+```{r naive_cm1, echo = FALSE, , comment = NA}
+kable(tree.cm$overall, caption = "Evaluation Metrics", booktabs = TRUE, col.names = 'Naive Model Metrics') %>% 
+        kable_styling(font_size = 8, position = 'float_right', latex_options = c("striped", "hold_position"))
+
+kable(as.data.frame(tree.cm$byClass), booktabs = TRUE, col.names = 'Naive Model Metrics') %>% 
+        kable_styling(font_size = 8, position = 'float_right', latex_options = c("striped", "hold_position"))
+
+```
+
+The naive model is also useful for identifying the variables that are likely to be the best predictors. As seen in __Figure 5__, the variables _Hist_2_150_2_Entropy_, _Hist_2_30_2_Entropy_, and _Hist_1_180_2_Mean_ play key roles in this model. Any observation having a _Hist_2_150_2_Entropy_ greater than or equal to 2.7 are then evaluated against _Hist_2_30_2_Entropy_, while observations having a _Hist_2_150_2_Entropy_ of less than 2.7 are evaluated against _Hist_1_180_2_Mean_. 
+
+```{r naive_model, echo = FALSE, out.width = '350px', fig.cap = 'Naive Decision Tree', fig.align = "center", fig.pos = 'H'}
+
+rpart.plot(tree)
+
+```
+
+The model... I dont understand why it moves the image  
+
+
+
+\subsection{Variable Importance}
+variables in use_data_lc are quite different than those selected by rfe

@@ -1,0 +1,93 @@
+---
+header-includes:
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{array}
+  - \usepackage{multirow}
+  - \usepackage[table]{xcolor}
+  - \usepackage{wrapfig}
+  - \usepackage{float}
+  - \usepackage{colortbl}
+  - \usepackage{pdflscape}
+  - \usepackage{tabu}
+  - \usepackage{threeparttable}
+  - \usepackage[normalem]{ulem}
+  - \usepackage{placeins}
+  
+output:
+  pdf_document: 
+        fig_caption: yes
+        number_sections: yes
+  word_document: default
+  html_document: 
+        toc: true
+        
+bibliography: Chapters/bibliography.bib
+---
+
+```{r setup, set-options, include=FALSE}
+
+knitr::opts_chunk$set(echo=FALSE
+                      ,cache=TRUE
+                      ,autodep=TRUE
+                      ,cache.comments=FALSE
+                      ,message=FALSE
+                      ,warning=FALSE
+                      ,tidy = FALSE)
+options(width = 400, kableExtra.latex.load_packages = FALSE, knitr.table.format = "latex")
+
+```
+
+```{r child = 'Chapters/titlepage.Rmd'}
+```
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+
+```{r child = 'Chapters/introduction.Rmd'}
+```
+
+\FloatBarrier
+
+```{r child = 'Chapters/data.Rmd'}
+```
+
+\FloatBarrier
+
+```{r child = 'Chapters/eda.Rmd'}
+```
+
+\FloatBarrier
+
+check the variable plot.. 16 vars should be over 95%
+
+```{r child = 'Chapters/models.Rmd'}
+```
+
+\FloatBarrier
+
+```{r child = 'Chapters/conclusion.Rmd'}
+``` 
+
+\FloatBarrier
+
+
+\newpage
+
+\appendix \section{Appendices}
+
+```{r child = 'Chapters/appendixa.Rmd'}
+``` 
+
+\newpage
+
+```{r child = 'Chapters/appendixb.Rmd'}
+``` 
+
+\newpage
+
+# References

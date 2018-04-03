@@ -20,6 +20,7 @@ library(rpart)
 library(rpart.plot)
 library(pROC)
 library(klaR)
+library(gridExtra)
 
 ###############################################################################
 # Load data and prepare dataset
@@ -43,17 +44,15 @@ ll$Position <- "Left Lower"
 # Combine all sections into one dataframe
 full <- rbind(ru, rm, rl, lu, lm, ll)
 
-# Set levels of the factor - makes it easier to read
-full$Label2 <- ifelse(full$Label == 0, 'Normal', 'Abnormal')
-
 # Prepare data set
+# Set levels of the factor - makes it easier to read
 use_data <- full %>%
-        mutate(Label2 = factor(Label2)) %>%
+        mutate(Label = recode(Label, '0' = 'Normal', '1' = 'Abnormal')) %>%
         mutate(Position = factor(Position)) %>% 
-        dplyr::select(-PatientNumMasked, -Label)
+        dplyr::select(-PatientNumMasked)
 
 # Create training and test datasets
-trainIndex <- createDataPartition(use_data$Label2, p = 0.7, list = FALSE)
+trainIndex <- createDataPartition(use_data$Label, p = 0.7, list = FALSE)
 trainData <- use_data[trainIndex,]
 testData <- use_data[-trainIndex,]
 
@@ -76,12 +75,19 @@ stats <- basicStats(use_data[-c(40,41)])[c("Mean", "Median", "Stdev", "Minimum",
 t(round(stats, 2))
 
 # Verify that all labels for patients are the same
-checkLabel <- full %>%
+checklabel <- full %>%
         group_by(PatientNumMasked) %>%
         mutate(minLabel = min(Label)) %>%
         mutate(maxLabel = max(Label)) %>%
         mutate(count = length(PatientNumMasked)) %>%
         dplyr::select(PatientNumMasked, minLabel, maxLabel, count) 
+
+# If the min and max are equal, they will be dropped.  If list is empty
+# then the label is consistent across data sets for all patients
+checklabel <- checklabel %>%
+        dplyr::filter(minLabel != maxLabel)
+
+checklabel <- ifelse(dim(checklabel)[1] == 0, 'no', dim(checklabel)[1])
 
 # Correlation between predictors
 corr <- cor(use_data[-c(40,41)])
@@ -96,7 +102,7 @@ highly_correlated <- data.frame("Correlated Variables 1" = colnames(use_data[hig
 
 use_data_lc <- use_data[,-highCorrelation]
 low_corr <- use_data_lc %>%
-        dplyr::select(-Position, -Label2)
+        dplyr::select(-Position, -Label)
 low_corr<- cor(low_corr)
 
 col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
@@ -110,27 +116,29 @@ corrplot(low_corr, method = "color", col = col(200),
          diag = FALSE)
 
 # Scatter plot between predictors; scatter plot for response is pointless since it is categorical
-pairs(Label2 ~ ., data = use_data[c(1,41)])
+pairs(Label ~ ., data = use_data[c(1,41)])
 
-# Check for outliers
-for(var in 1:length(use_data[-c(40, 41)])) {
-        #variable <- use_data[var]
-        #colnames(variable) <- colnames(use_data[var])
-        p <- ggplot(data = use_data, aes(x = "", y = use_data[var])) + 
-                geom_boxplot(color="red", fill="orange", alpha=0.2) +
-                labs(title = paste("Outliers - ", colnames(use_data[var])))
-        coord_cartesian(ylim = c(min(use_data[var]), max(use_data[var])))
-        print(p)
-        #boxplot(use_data[var], main = colnames(use_data[var]))
+# Check for outliers - Boxplots
+plots <- list(0)
+for(var in 3:4) {
+        p <- ggplot(data = use_data, aes(x = '', y = use_data[,var])) + 
+                geom_boxplot(color='red', fill='orange', alpha = 0.2) +
+                labs(title = paste('Outliers - ', colnames(use_data[var]))) +
+                ylab('Boxplot') +
+                xlab('') + 
+        coord_cartesian(ylim = c(min(use_data[,var]), max(use_data[,var])))
+        plots[[var-2]] <- p
 }
+
+grid.arrange(plots[[1]], plots[[2]], ncol = 2)
 
 ###############################################################################
 # Exploratory Model and Important Variables
 ###############################################################################
 
-naive <- rpart(Label2 ~., data = use_data)
+naive <- rpart(Label ~., data = use_data)
 rpart.plot(naive)
-naive.pred <- predict(navie, use_, type = 'class')
+naive.pred <- predict(naive, use_, type = 'class')
 
 cm <- confusionMatrix(naive.pred, use_data$Label2, positive = 'Normal')
 
