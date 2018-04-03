@@ -141,10 +141,8 @@ The evaluation metrics for the naive model are provided in __Table 4__. The perf
 ```{r naive_cm1, echo = FALSE, , comment = NA}
 tree.combined <- data.frame(c(tree.cm$overall, tree.cm$byClass))
 
-
 kable(tree.combined, caption = "Evaluation Metrics", booktabs = TRUE, col.names = 'Naive Model Metrics') %>% 
         kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
-
 
 ```
 
@@ -156,9 +154,36 @@ rpart.plot(tree)
 
 ```
 
-The model... I dont understand why it moves the image  
-
-
-
 \subsection{Variable Importance}
+It is always beneficial to reduce the complexity and dimensionality of a model whenever possible. One way to simplify a model is to reduce the number of predictors to include only those that actually provide value for the model. Including more predictors than needed increases the run-time for the model, and makes it prone to overfitting. An overfit model is one that fits the training data too well because it has learned the details and the noise. While it may provide excellent results on the training data, it typically performs poorly on new data.
+
+The 'caret' package in R provides the 'rfe' function for recursive feature elimination which is a simple backwards selection process to identify the best predictors. The process works by including all variables in the model and removing variables one at a time to test the accuracy. If the accuracy improves, another variable is removed and the model is tested again. Once all combinations of variables have been tested, the process completes. __Figure 6__ shows that the best accuracy - roughly 93%, is achieved with 16 variables. Note that the accuracy degrades as more predictors are added to the model. 
+
+```{r model_data, include = FALSE}
+
+control <- rfeControl(functions = rfFuncs
+                      ,method = "repeatedcv"
+                      ,number = 3
+                      ,verbose = FALSE)
+
+pref_variables <- rfe(use_data[-40], use_data[,40], rfeControl = control)
+
+# Print the results
+pref_variables
+
+# List the variables
+predictors(pref_variables)
+
+```
+
+```{r var_plot, echo = FALSE, out.width = '350px', fig.cap = 'Variable Selection', fig.align = "center", fig.pos = 'H'}
+
+plot(pref_variables, type = c("g", "o"))
+
+# Create a data set using the preferred variables
+model_data <- use_data %>%
+        dplyr::select(predictors(pref_variables), Label)
+
+```
+
 variables in use_data_lc are quite different than those selected by rfe

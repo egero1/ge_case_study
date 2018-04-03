@@ -2,31 +2,7 @@
 
 used the caret package for all
 
-```{r model_data, include = FALSE}
 
-control <- rfeControl(functions = rfFuncs
-                      ,method = "repeatedcv"
-                      ,number = 3
-                      ,verbose = FALSE)
-
-pref_variables <- rfe(use_data[-41], use_data[,41], rfeControl = control)
-
-# Print the results
-pref_variables
-
-# List the variables
-predictors(pref_variables)
-```
-
-```{r var_plot, echo = FALSE, out.width = '350px', fig.cap = 'Variable Selection', fig.align = "center", fig.pos = 'H'}
-
-plot(pref_variables, type = c("g", "o"))
-
-# Create a data set using the preferred variables
-model_data <- use_data %>%
-        select(predictors(pref_variables), Label)
-
-```
 
 \subsection{Generalized Linear Model} 
 ```{r glm, echo = FALSE}

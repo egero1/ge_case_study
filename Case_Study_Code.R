@@ -47,7 +47,7 @@ full <- rbind(ru, rm, rl, lu, lm, ll)
 # Prepare data set
 # Set levels of the factor - makes it easier to read
 use_data <- full %>%
-        mutate(Label = recode(Label, '0' = 'Normal', '1' = 'Abnormal')) %>%
+        mutate(Label = factor(recode(Label, '0' = 'Normal', '1' = 'Abnormal'))) %>%
         mutate(Position = factor(Position)) %>% 
         dplyr::select(-PatientNumMasked)
 
@@ -168,7 +168,7 @@ control <- rfeControl(functions = rfFuncs
                       ,number = 3
                       ,verbose = FALSE)
 
-pref_variables <- rfe(use_data[-41], use_data[,41], rfeControl = control)
+pref_variables <- rfe(use_data[-40], use_data[,40], rfeControl = control)
 
 # Print the results
 pref_variables
@@ -180,7 +180,7 @@ plot(pref_variables, type = c("g", "o"))
 
 # Create a data set using the preferred variables
 model_data <- use_data %>%
-        select(predictors(pref_variables), Label2)
+        dplyr::select(predictors(pref_variables), Label)
 
 compare model data to low_corr_lc
 ###############################################################################

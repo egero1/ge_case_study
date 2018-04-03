@@ -41,7 +41,7 @@ full <- rbind(ru, rm, rl, lu, lm, ll)
 # Prepare data set
 # Set levels of the factor - makes it easier to read
 use_data <- full %>%
-        mutate(Label = recode(Label, '0' = 'Normal', '1' = 'Abnormal')) %>%
+        mutate(Label = factor(recode(Label, '0' = 'Normal', '1' = 'Abnormal'))) %>%
         mutate(Position = factor(Position)) %>% 
         dplyr::select(-PatientNumMasked)
 
