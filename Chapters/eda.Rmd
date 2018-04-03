@@ -59,7 +59,7 @@ highly_correlated <- data.frame("Correlated Variables 1" = colnames(use_data[hig
                                 "Correlated Variables 2" = colnames(use_data[highCorrelation])[(rows/2 + 1):rows])
 
 kable(highly_correlated, caption = "Highly Correlated Variables", booktabs = TRUE, col.names = c('', '')) %>% 
-        kable_styling(font_size = 8, position = 'float_right', latex_options = c("striped", "hold_position"))
+        kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
 
 ```
 
