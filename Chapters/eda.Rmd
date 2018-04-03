@@ -120,7 +120,7 @@ kable(tree.cm$table, caption = "Confusion Matrix", booktabs = TRUE) %>%
         kable_styling(font_size = 8, position = 'float_right', latex_options = c("striped", "hold_position"))
 ```
 
-The evaluation metrics for the naive model are provided in __Table 5__. Some of these metrics will be used to evaluate the models that are built, so it is worth discussing them here to ensure they are well understood.
+The evaluation metrics for the naive model are provided in __Table 4__. Some of these metrics will be used to evaluate the models that are built, so it is worth discussing them here to ensure they are well understood.
 
 ```{r naive_cm1, echo = FALSE, , comment = NA}
 kable(tree.cm$overall, caption = "Evaluation Metrics", booktabs = TRUE, col.names = 'Naive Model Metrics') %>% 
