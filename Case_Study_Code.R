@@ -136,22 +136,27 @@ grid.arrange(plots[[1]], plots[[2]], ncol = 2)
 # Exploratory Model and Important Variables
 ###############################################################################
 
-naive <- rpart(Label ~., data = use_data)
-rpart.plot(naive)
-naive.pred <- predict(naive, use_, type = 'class')
+tree <- rpart(Label ~., data = use_data)
+tree.pred <- predict(tree, use_data, type = 'class')
+tree.cm <- confusionMatrix(tree.pred, use_data$Label, positive = 'Abnormal')
 
-cm <- confusionMatrix(naive.pred, use_data$Label2, positive = 'Normal')
+tree.combined <- data.frame(c(tree.cm$overall, tree.cm$byClass))
 
-scaled <- scale(use_data[-c(40,41)])
-for(var in 1:length(use_data[-c(40, 41)])) {
+#scaled <- scale(use_data[-c(40,41)])
+#for(var in 1:length(use_data[-c(40, 41)])) {
         
-        boxplot(scaled[var], main = colnames(scaled[var]))
-}
-scaled <- scale(use_data[-c(40,41)])
-outlierKD(use_data, Hist_0_0_0_Mean)
+#        boxplot(scaled[var], main = colnames(scaled[var]))
+#}
+#scaled <- scale(use_data[-c(40,41)])
+#outlierKD(use_data, Hist_0_0_0_Mean)
+
+rpart.plot(tree)
+
 
 # Review the dataset
 summary(use_data)
+
+tree.cm$overall
 
 ###############################################################################
 # Feature selection using Recursive Feature Elimination or RFE

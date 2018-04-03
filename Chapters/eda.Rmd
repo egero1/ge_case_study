@@ -36,6 +36,8 @@ checklabel <- ifelse(dim(checklabel)[1] == 0, 'no', dim(checklabel)[1])
 
 Since the lung images from each patient are broken into six segments and each tab contains the patient number and the label, it is possible that the labels for a patient do not match across the six segments. This is not much of an issue at the segment level, but it is important that it is taken into account if the data is rolled up or combined into a single table. If the label for any segement is 'Abnormal', then it should be considered that disease is present in the patient, regardless of the value of the other segment labels. It is confirmed that `r checklabel` patients have inconsistent label values.
 
+The prevalence rate for Pneumoconiosis in the data set is roughly 36%. The remaining 64% of patients are labeled as 'Normal', meaning no disease was detected during the initial analysis by the medical experts. 
+
 \subsection{Correlation - Predictors} 
 The correlation plot in __Figure 2__ shows that some of the predictors have strong correlations with each other. This requires further investigation as high correlation among predictors can cause instability in the model. Generally, when two variables are highly correlated, it is best to remove one since the second is not providing new information.
 
@@ -105,6 +107,20 @@ grid.arrange(plots[[1]], plots[[2]], ncol = 2)
 
 
 ```
+\subsection{Evaluation Metrics}
+
+In order to understand how well the models are performing, or detecting Pneumoconiosis, various evaluation metrics will be considered. The most common evaluation metrics for classification include sensitivity, specificity, precision, F1 and accuracy and are based on the rates of True Positive (TP), True Negative (TN), False Positive (FN) and False Negative (FN). 
+
+Since the evaluation metrcis are defined in terms of TP, TN, FP and FN rates, definitions for each are provided. TP is when the model predicts 'Abnormal' and the patient actually does have Pneumoconiosis. TN is when the model predicts 'Normal' and the patient does not have Pneumoconiosis. FP is when the model predicts 'Abnormal, but the patient does not actually have Pneumoconiosis, and FN is when the model predicts 'Normal', but Pneumoconiosis is present. The following definitions can now be applied:
+
+### Evaluation metric definitions [@evalmetric]
+* Sensitivity (recall) - true positive rate = TP/(TP + FN)
+* Specificity - true negative rate = TN/(TN + FP)
+* Accuracy - proportion of true positive or true negative = (TN + TP)/(TN + TP + FN + FP)
+* Precision - proportion of correctly predicted positive observations to the total predicted positive observations = TP/(TP + FP)
+* F1 - weighted average of precision and recall = 2 * (TP/(TP + FN) * TP/(TP + FP))/(TP/(TP + FN) + TP/(TP + FP))
+
+F1 takes both false positives and false negatives into account, so it can be more useful than accuracy alone, especially when there is an uneven class distribution.
 
 \subsection{Naive Model}
 
@@ -114,20 +130,21 @@ A simple decision tree was used to fit a naive model. This model uses the full d
 tree <- rpart(Label ~., data = use_data)
 
 tree.pred <- predict(tree, use_data, type = 'class')
-tree.cm <- confusionMatrix(tree.pred, use_data$Label, positive = 'Normal')
+tree.cm <- confusionMatrix(tree.pred, use_data$Label, positive = 'Abnormal')
 
 kable(tree.cm$table, caption = "Confusion Matrix", booktabs = TRUE) %>% 
-        kable_styling(font_size = 8, position = 'float_right', latex_options = c("striped", "hold_position"))
+        kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
 ```
 
-The evaluation metrics for the naive model are provided in __Table 4__. Some of these metrics will be used to evaluate the models that are built, so it is worth discussing them here to ensure they are well understood.
+The evaluation metrics for the naive model are provided in __Table 4__. The performance of this simple model is much better than expected, with an accuracy of 89% and an F1 of 85%. With a specificity of 95% and a sensitivity of 79%, the model is better at identifying true negatives than it is at identifying true positives.
 
 ```{r naive_cm1, echo = FALSE, , comment = NA}
-kable(tree.cm$overall, caption = "Evaluation Metrics", booktabs = TRUE, col.names = 'Naive Model Metrics') %>% 
-        kable_styling(font_size = 8, position = 'float_right', latex_options = c("striped", "hold_position"))
+tree.combined <- data.frame(c(tree.cm$overall, tree.cm$byClass))
 
-kable(as.data.frame(tree.cm$byClass), booktabs = TRUE, col.names = 'Naive Model Metrics') %>% 
-        kable_styling(font_size = 8, position = 'float_right', latex_options = c("striped", "hold_position"))
+
+kable(tree.combined, caption = "Evaluation Metrics", booktabs = TRUE, col.names = 'Naive Model Metrics') %>% 
+        kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
+
 
 ```
 

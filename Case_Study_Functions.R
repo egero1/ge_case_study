@@ -1,4 +1,7 @@
 # https://www.r-bloggers.com/identify-describe-plot-and-remove-the-outliers-from-the-dataset/
+
+dyn.load('/Library/Java/JavaVirtualMachines/jdk-9.0.1.jdk/Contents/Home/lib/server/libjvm.dylib')
+library(rJava)
 outlierKD <- function(dt, var) {
         var_name <- eval(substitute(var),eval(dt))
         na1 <- sum(is.na(var_name))
