@@ -7,4 +7,6 @@ Each segment contains 39 continuous variables and a categorical response variabl
 Apart from calculating these on the original ROI, we also extract these features after applying a difference filter on the image for the purpose of local enhancement. If I(x,y) denotes the image gray value at (x,y), the first and second order filters are defined as:
 
 
+__NEED TO FINISH THIS SECTION__
+
 

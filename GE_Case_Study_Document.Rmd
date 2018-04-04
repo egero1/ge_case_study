@@ -18,11 +18,8 @@ output:
   pdf_document: 
         fig_caption: yes
         number_sections: yes
-  word_document: default
-  html_document: 
-        toc: true
-        
 bibliography: Chapters/bibliography.bib
+csl: Chapters/apa.csl
 ---
 
 ```{r setup, set-options, include=FALSE}
@@ -44,6 +41,8 @@ options(width = 400, kableExtra.latex.load_packages = FALSE, knitr.table.format 
 \newpage
 
 \tableofcontents
+\listoftables
+\listoffigures
 
 \newpage
 

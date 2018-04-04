@@ -157,22 +157,34 @@ rpart.plot(tree)
 \subsection{Variable Importance}
 It is always beneficial to reduce the complexity and dimensionality of a model whenever possible. One way to simplify a model is to reduce the number of predictors to include only those that actually provide value for the model. Including more predictors than needed increases the run-time for the model, and makes it prone to overfitting. An overfit model is one that fits the training data too well because it has learned the details and the noise. While it may provide excellent results on the training data, it typically performs poorly on new data.
 
-The 'caret' package in R provides the 'rfe' function for recursive feature elimination which is a simple backwards selection process to identify the best predictors. The process works by including all variables in the model and removing variables one at a time to test the accuracy. If the accuracy improves, another variable is removed and the model is tested again. Once all combinations of variables have been tested, the process completes. __Figure 6__ shows that the best accuracy - roughly 93%, is achieved with 16 variables. Note that the accuracy degrades as more predictors are added to the model. 
+The 'caret' package in R provides the 'rfe' function for recursive feature elimination which is a simple backwards selection process to identify the best predictors. The function implements backwards selection of predictors based on predictor importance ranking. The predictors are ranked and the less important ones are sequentially eliminated prior to modeling [@kuhn]. The goal is to find a subset of predictors that can be used to produce an accurate model. __Figure 6__ shows that the best accuracy - roughly 93%, is achieved with 16 variables. Note that the accuracy degrades as more predictors are added to the model. 
+
+It is also worth noting that the 'rfe' function allows the selection process to be performed using numerous cross validation techniques, including leave one out cross validation. However, the function was implemented using cross validation, repeated five times. The results were almost identical to those of LOOCV but completed in seconds whie the LOOCV method took over an hour to run.
 
 ```{r model_data, include = FALSE}
 
+# Enable parallel processing and reserve resources
+cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
+registerDoParallel(cluster)
+
+set.seed(1234)
 control <- rfeControl(functions = rfFuncs
                       ,method = "repeatedcv"
-                      ,number = 3
-                      ,verbose = FALSE)
+                      ,number = 5
+                      ,verbose = FALSE
+                      ,allowParallel = TRUE)
 
 pref_variables <- rfe(use_data[-40], use_data[,40], rfeControl = control)
 
 # Print the results
-pref_variables
+#pref_variables
 
 # List the variables
-predictors(pref_variables)
+#predictors(pref_variables)
+
+# Disable parallel processing and release resources
+stopCluster(cluster)
+registerDoSEQ()
 
 ```
 

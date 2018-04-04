@@ -21,6 +21,8 @@ library(rpart.plot)
 library(pROC)
 library(klaR)
 library(gridExtra)
+library(parallel)
+library(doParallel)
 
 ###############################################################################
 # Load data and prepare dataset
@@ -163,10 +165,16 @@ tree.cm$overall
 # https://www.analyticsvidhya.com/blog/2016/12/practical-guide-to-implement-machine-learning-with-caret-package-in-r-with-practice-problem/
 ###############################################################################
 
+# Enable parallel processing and reserve resources
+cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
+registerDoParallel(cluster)
+
+set.seed(1234)
 control <- rfeControl(functions = rfFuncs
                       ,method = "repeatedcv"
                       ,number = 5
-                      ,verbose = FALSE)
+                      ,verbose = FALSE
+                      ,allowParallel = TRUE)
 
 pref_variables <- rfe(use_data[-40], use_data[,40], rfeControl = control)
 
@@ -175,6 +183,10 @@ pref_variables
 
 # List the variables
 predictors(pref_variables)
+
+# Disable parallel processing and release resources
+stopCluster(cluster)
+registerDoSEQ()
 
 plot(pref_variables, type = c("g", "o"))
 
@@ -384,8 +396,7 @@ saveRDS(nb.model, "Models/nb_model_data.rds")
 # https://www.analyticsvidhya.com/blog/2016/12/practical-guide-to-implement-machine-learning-with-caret-package-in-r-with-practice-problem/
 ###############################################################################
 
-library(parallel)
-library(doParallel)
+
 cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
 registerDoParallel(cluster)
 
