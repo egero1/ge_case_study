@@ -154,10 +154,10 @@ tree.combined <- data.frame(c(tree.cm$overall, tree.cm$byClass))
 
 rpart.plot(tree)
 
-
 # Review the dataset
 summary(use_data)
 
+# Review the evaluation metrics
 tree.cm$overall
 
 ###############################################################################
@@ -193,6 +193,15 @@ plot(pref_variables, type = c("g", "o"))
 # Create a data set using the preferred variables
 model_data <- use_data %>%
         dplyr::select(predictors(pref_variables), Label)
+
+predictors_md <- as.data.frame(colnames(model_data[-17]))
+predictors_lc <- as.data.frame(colnames(use_data_lc[-12]))
+colnames(predictors_md) <- "Backwards Selection"
+colnames(predictors_lc) <- "Low Correlation"
+common_predictors <- as.data.frame(intersect(predictors_md$`Backwards Selection`, predictors_lc$`Low Correlation`))
+colnames(common_predictors) <- "Common Predictors"
+
+
 
 compare model data to low_corr_lc
 ###############################################################################
