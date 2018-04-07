@@ -154,6 +154,11 @@ tree.combined <- data.frame(c(tree.cm$overall, tree.cm$byClass))
 
 rpart.plot(tree)
 
+tree.pred <- predict(tree, use_data)
+tree.ROC <- roc(use_data$Label, tree.pred[,1])
+plot(tree.ROC, col = 'blue', main = paste('Area under the curve (AUC):', round(auc(tree.ROC),2)))
+auc(tree.ROC)
+
 # Review the dataset
 summary(use_data)
 
@@ -201,9 +206,20 @@ colnames(predictors_lc) <- "Low Correlation"
 common_predictors <- as.data.frame(intersect(predictors_md$`Backwards Selection`, predictors_lc$`Low Correlation`))
 colnames(common_predictors) <- "Common Predictors"
 
+###############################################################################
+# Modeling
+###############################################################################
 
+# Create a data frame to hold the results
+model_results <- data.frame(Model = character()
+                          ,Data = character()
+                          ,ROC = numeric()
+                          ,Accuracy = numeric()
+                          ,Kappa = numeric()
+                          ,F1 = numeric()
+                          ,Sensitivity = numeric()
+                          ,Specificity = numeric())
 
-compare model data to low_corr_lc
 ###############################################################################
 # GLM - LOOCV
 # http://www.rebeccabarter.com/blog/2017-11-17-caret_tutorial/
@@ -211,7 +227,9 @@ compare model data to low_corr_lc
 # https://www.analyticsvidhya.com/blog/2016/12/practical-guide-to-implement-machine-learning-with-caret-package-in-r-with-practice-problem/
 ###############################################################################
 
-train_data <- use_data_lc
+# Enable parallel processing and reserve resources
+cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
+registerDoParallel(cluster)
 
 # Set up training conditions - must use LOOCV
 fitControl <- trainControl(method = "LOOCV"
@@ -219,51 +237,106 @@ fitControl <- trainControl(method = "LOOCV"
                            ,summaryFunction = twoClassSummary
                            ,savePredictions = 'final')
 
-# First model is a Generalized Linear Model
+# Full data set
 set.seed(1234)
-glm.model <- caret::train(Label2 ~.
-                          ,data = train_data
+glm.model.ud <- caret::train(Label ~.
+                          ,data = use_data
                           ,family = 'binomial'
                           ,method = 'glm'
                           ,trControl = fitControl
                           ,metric = "ROC")
 
 # Get the confusion matrix
-glm.cm <- caret::confusionMatrix(glm.model$pred$pred, glm.model$pred$obs, mode = "everything")
+glm.cm.ud <- caret::confusionMatrix(glm.model.ud$pred$pred, glm.model.ud$pred$obs, mode = "everything")
 
 # Get the performance metrics from the model and save for comparison
-performance <- getTrainPerf(glm.model)
-glm_results <- data.frame("Model" = "GLM"
-                          ,"Data" = "use_data_lc"
-                          ,"ROC" = performance[,1]
-                          ,"Accuracy" = glm.cm$overall[1]
-                          ,"Kappa" = glm.cm$overall[2]
-                          ,"Sensitivity" = performance[,2]
-                          ,"Specificity" = performance[,3])
+performance <- getTrainPerf(glm.model.ud)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'GLM'
+                        ,Data = 'Full'
+                        ,ROC = performance[,1]
+                        ,Accuracy = glm.cm.ud$overall[1]
+                        ,Kappa = glm.cm.ud$overall[2]
+                        ,F1 = glm.cm.ud$byClass[7]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
 
-glm.ROC <- roc(glm.model$pred$obs, glm.model$pred$Normal)
-plot(glm.ROC, col = "blue")
-auc(glm.ROC)
+# RFE selection data set
+set.seed(1234)
+glm.model.md <- caret::train(Label ~.
+                          ,data = model_data
+                          ,family = 'binomial'
+                          ,method = 'glm'
+                          ,trControl = fitControl
+                          ,metric = "ROC")
+
+# Get the confusion matrix
+glm.cm.md <- caret::confusionMatrix(glm.model.md$pred$pred, glm.model.md$pred$obs, mode = "everything")
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(glm.model.md)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'GLM'
+                        ,Data = 'RFE Selection'
+                        ,ROC = performance[,1]
+                        ,Accuracy = glm.cm.md$overall[1]
+                        ,Kappa = glm.cm.md$overall[2]
+                        ,F1 = glm.cm.md$byClass[7]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+# Low correlation data set
+set.seed(1234)
+glm.model.lc <- caret::train(Label ~.
+                          ,data = use_data_lc
+                          ,family = 'binomial'
+                          ,method = 'glm'
+                          ,trControl = fitControl
+                          ,metric = "ROC")
+
+# Get the confusion matrix
+glm.cm.lc <- caret::confusionMatrix(glm.model.lc$pred$pred, glm.model.lc$pred$obs, mode = "everything")
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(glm.model.lc)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'GLM'
+                        ,Data = 'Low Correlation'
+                        ,ROC = performance[,1]
+                        ,Accuracy = glm.cm.lc$overall[1]
+                        ,Kappa = glm.cm.lc$overall[2]
+                        ,F1 = glm.cm.lc$byClass[7]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+rownames(model_results) <- NULL
+
+# Disable parallel processing and release resources
+stopCluster(cluster)
+registerDoSEQ()
+
+glm.ROC <- roc(glm.model.ud$pred$obs, glm.model.ud$pred$Normal)
+plot(glm.ROC, col = 'blue', main = paste('GLM - Area under the curve (AUC):', round(auc(glm.ROC),2)))
 
 # Print model coefficients
-glm.model$finalModel$coefficients
-
-# Add model results to dataframe for comparison
-final_results <- rbind(final_results, glm_results)
+coefficients <- as.data.frame(glm.model.ud$finalModel$coefficients)
+coefficients
 
 # Save models in case we want to review them later
-saveRDS(final_results, "final_results.rds")
-saveRDS(glm.model, "Models/glm_use_data.rds")
-saveRDS(glm.model, "Models/glm_use_data_lc.rds")
-saveRDS(glm.model, "Models/glm_model_data.rds")
+saveRDS(model_results, "final_results.rds")
+saveRDS(glm.model.ud, "Models/glm_use_data.rds")
+saveRDS(glm.model.md, "Models/glm_model_data.rds")
+saveRDS(glm.model.lc, "Models/glm_use_data_lc.rds")
 
-fix final_results so it creates itself when empty
 ###############################################################################
 # SVM - LOOCV Caret
 # https://stats.stackexchange.com/questions/136274/leave-one-subject-out-cv-method
 ###############################################################################
 
-train_data <- use_data
+# Enable parallel processing and reserve resources
+cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
+registerDoParallel(cluster)
+
 
 # Set up training conditions - must use LOOCV
 fitControl <- trainControl(method = "LOOCV"
@@ -271,45 +344,97 @@ fitControl <- trainControl(method = "LOOCV"
                            ,summaryFunction = twoClassSummary
                            ,savePredictions = 'final')
 
-# Second model is a Support Vector Machine
+# Full data set
 set.seed(1234)
-svm.model <- caret::train(Label2 ~ .
-                          ,data = train_data 
+svm.model.ud <- caret::train(Label ~ .
+                          ,data = use_data 
                           ,method = "svmRadial"
                           ,trControl = fitControl
                           ,metric = "Accuracy")
 
 # Get the confusion matrix
-svm.cm <- caret::confusionMatrix(svm.model$pred$pred, svm.model$pred$obs, mode = "everything")
+svm.cm.ud <- caret::confusionMatrix(svm.model.ud$pred$pred, svm.model.ud$pred$obs, mode = "everything")
 
 # Get the performance metrics from the model and save for comparison
-performance <- getTrainPerf(svm.model)
-svm_results <- data.frame("Model" = "SVM - RBF"
-                          ,"Data" = "use_data"
-                          ,"ROC" = performance[,1]
-                          ,"Accuracy" = svm.cm$overall[1]
-                          ,"Kappa" = svm.cm$overall[2]
-                          ,"Sensitivity" = performance[,2]
-                          ,"Specificity" = performance[,3])
+performance <- getTrainPerf(svm.model.ud)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'SVM'
+                        ,Data = 'Full'
+                        ,ROC = performance[,1]
+                        ,Accuracy = svm.cm.ud$overall[1]
+                        ,Kappa = svm.cm.ud$overall[2]
+                        ,F1 = svm.cm.ud$byClass[7]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
 
-svm.ROC <- roc(svm.model$pred$obs, svm.model$pred$Normal)
-plot(svm.ROC, col = "blue")
-auc(svm.ROC)
+# RFE selection data set
+set.seed(1234)
+svm.model.md <- caret::train(Label ~ .
+                          ,data = model_data
+                          ,method = "svmRadial"
+                          ,trControl = fitControl
+                          ,metric = "Accuracy")
 
-# Add model results to dataframe for comparison
-final_results <- rbind(final_results, svm_results)
+# Get the confusion matrix
+svm.cm.md <- caret::confusionMatrix(svm.model.md$pred$pred, svm.model.md$pred$obs, mode = "everything")
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(svm.model.md)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'SVM'
+                        ,Data = 'RFE Selection'
+                        ,ROC = performance[,1]
+                        ,Accuracy = svm.cm.md$overall[1]
+                        ,Kappa = svm.cm.md$overall[2]
+                        ,F1 = svm.cm.md$byClass[7]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+# Low correlation data set
+set.seed(1234)
+svm.model.lc <- caret::train(Label ~ .
+                           ,data = use_data_lc
+                           ,method = "svmRadial"
+                           ,trControl = fitControl
+                           ,metric = "Accuracy")
+
+# Get the confusion matrix
+svm.cm.lc <- caret::confusionMatrix(svm.model.lc$pred$pred, svm.model.lc$pred$obs, mode = "everything")
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(svm.model.lc)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'SVM'
+                        ,Data = 'Low Correlation'
+                        ,ROC = performance[,1]
+                        ,Accuracy = svm.cm.lc$overall[1]
+                        ,Kappa = svm.cm.lc$overall[2]
+                        ,F1 = svm.cm.lc$byClass[7]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+rownames(model_results) <- NULL
+
+# Disable parallel processing and release resources
+stopCluster(cluster)
+registerDoSEQ()
+
+svm.ROC <- roc(svm.model.ud$pred$obs, svm.model.ud$pred$Normal)
+plot(svm.ROC, col = 'blue', main = paste('SVM - Area under the curve (AUC):', round(auc(svm.ROC),2)))
 
 # Save models in case we want to review them later
-saveRDS(final_results, "final_results.rds")
-saveRDS(svm.model, "Models/svm_use_data.rds")
-saveRDS(svm.model, "Models/svm_use_data_lc.rds")
-saveRDS(svm.model, "Models/svm_model_data.rds")
+saveRDS(model_results, "final_results.rds")
+saveRDS(svm.model.ud, "Models/svm_use_data.rds")
+saveRDS(svm.model.md, "Models/svm_model_data.rds")
+saveRDS(svm.model.lc, "Models/svm_use_data_lc.rds")
 
 ###############################################################################
 # kNN - LOOCV Caret
 ###############################################################################
 
-train_data <- use_data_lc
+# Enable parallel processing and reserve resources
+cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
+registerDoParallel(cluster)
 
 # Set up training conditions - must use LOOCV
 fitControl <- trainControl(method = "LOOCV"
@@ -317,10 +442,10 @@ fitControl <- trainControl(method = "LOOCV"
                            ,summaryFunction = twoClassSummary
                            ,savePredictions = 'final')
 
-# Third model is a k-Nearest Neighbor
+# Full data set
 set.seed(1234)
-knn.model <- caret::train(Label2 ~ .
-                          ,data = train_data 
+knn.model.ud <- caret::train(Label ~ .
+                          ,data = use_data
                           ,method = "knn"
                           ,trControl = fitControl
                           ,metric = "ROC" 
@@ -328,30 +453,84 @@ knn.model <- caret::train(Label2 ~ .
                           ,tuneLength = 20)
 
 # Get the confusion matrix
-knn.cm <- caret::confusionMatrix(knn.model$pred$pred, knn.model$pred$obs, mode = "everything")
+knn.cm.ud <- caret::confusionMatrix(knn.model.ud$pred$pred, knn.model.ud$pred$obs, mode = "everything")
 
 # Get the performance metrics from the model and save for comparison
-performance <- getTrainPerf(knn.model)
-knn_results <- data.frame("Model" = "kNN"
-                          ,"Data" = "use_data_lc" 
-                          ,"ROC" = performance[,1]
-                          ,"Accuracy" = knn.cm$overall[1]
-                          ,"Kappa" = knn.cm$overall[2]
-                          ,"Sensitivity" = performance[,2]
-                          ,"Specificity" = performance[,3])
+performance <- getTrainPerf(knn.model.ud)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'kNN'
+                        ,Data = 'Full'
+                        ,ROC = performance[,1]
+                        ,Accuracy = knn.cm.ud$overall[1]
+                        ,Kappa = knn.cm.ud$overall[2]
+                        ,F1 = knn.cm.ud$byClass[7]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
 
-knn.ROC <- roc(knn.model$pred$obs, knn.model$pred$Normal)
-plot(knn.ROC, col = "blue")
-auc(knn.ROC)
+# RFE selection data set
+set.seed(1234)
+knn.model.md <- caret::train(Label ~ .
+                             ,data = model_data
+                             ,method = "knn"
+                             ,trControl = fitControl
+                             ,metric = "ROC" 
+                             ,preProc = c("center", "scale")
+                             ,tuneLength = 20)
 
-# Add model results to dataframe for comparison
-final_results <- rbind(final_results, knn_results)
+# Get the confusion matrix
+knn.cm.md <- caret::confusionMatrix(knn.model.md$pred$pred, knn.model.md$pred$obs, mode = "everything")
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(knn.model.md)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'kNN'
+                        ,Data = 'RFE Selection'
+                        ,ROC = performance[,1]
+                        ,Accuracy = knn.cm.md$overall[1]
+                        ,Kappa = knn.cm.md$overall[2]
+                        ,F1 = knn.cm.md$byClass[7]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+# Low correlation data set
+set.seed(1234)
+knn.model.lc <- caret::train(Label ~ .
+                             ,data = use_data_lc
+                             ,method = "knn"
+                             ,trControl = fitControl
+                             ,metric = "ROC" 
+                             ,preProc = c("center", "scale")
+                             ,tuneLength = 20)
+
+# Get the confusion matrix
+knn.cm.lc <- caret::confusionMatrix(knn.model.lc$pred$pred, knn.model.lc$pred$obs, mode = "everything")
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(knn.model.lc)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'kNN'
+                        ,Data = 'Low Correlation'
+                        ,ROC = performance[,1]
+                        ,Accuracy = knn.cm.lc$overall[1]
+                        ,Kappa = knn.cm.lc$overall[2]
+                        ,F1 = knn.cm.lc$byClass[7]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+rownames(model_results) <- NULL
+
+# Disable parallel processing and release resources
+stopCluster(cluster)
+registerDoSEQ()
+
+knn.ROC <- roc(knn.model.md$pred$obs, knn.model.md$pred$Normal)
+plot(knn.ROC, col = 'blue', main = paste('SVM - Area under the curve (AUC):', round(auc(knn.ROC),2)))
 
 # Save models in case we want to review them later
-saveRDS(final_results, "final_results.rds")
-saveRDS(knn.model, "Models/knn_use_data.rds")
-saveRDS(knn.model, "Models/knn_use_data_lc.rds")
-saveRDS(knn.model, "Models/knn_model_data.rds")
+saveRDS(model_results, "final_results.rds")
+saveRDS(knn.model.ud, "Models/knn_use_data.rds")
+saveRDS(knn.model.md, "Models/knn_model_data.rds")
+saveRDS(knn.model.lc, "Models/knn_use_data_lc.rds")
 
 ###############################################################################
 # Naive Bayes- LOOCV Caret

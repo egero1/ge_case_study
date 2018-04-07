@@ -2,10 +2,28 @@
 
 used the caret package for all
 
-
-
 \subsection{Generalized Linear Model} 
 ```{r glm, echo = FALSE}
+
+# Create a data frame to hold the results
+model_results <- data.frame(Model = character()
+                          ,Data = character()
+                          ,ROC = numeric()
+                          ,Accuracy = numeric()
+                          ,Kappa = numeric()
+                          ,F1 = numeric()
+                          ,Sensitivity = numeric()
+                          ,Specificity = numeric())
+```
+
+```{r glm_models, echo = FALSE}
+###############################################################################
+# Generalized Linear Models
+###############################################################################
+
+# Enable parallel processing and reserve resources
+cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
+registerDoParallel(cluster)
 
 # Set up training conditions - must use LOOCV
 fitControl <- trainControl(method = "LOOCV"
@@ -13,32 +31,308 @@ fitControl <- trainControl(method = "LOOCV"
                            ,summaryFunction = twoClassSummary
                            ,savePredictions = 'final')
 
-# First model is a Generalized Linear Model
+# Full data set
 set.seed(1234)
-glm.model <- caret::train(Label ~.
-                   ,data = model_data
-                   ,family = 'binomial'
-                   ,method = 'glm'
-                   ,trControl = fitControl
-                   ,metric = "Kappa")
+glm.model.ud <- caret::train(Label ~.
+                          ,data = use_data
+                          ,family = 'binomial'
+                          ,method = 'glm'
+                          ,trControl = fitControl
+                          ,metric = "ROC")
 
 # Get the confusion matrix
-glm.cm <- caret::confusionMatrix(glm.model$pred$pred, model_data$Label, mode = "everything")
+glm.cm.ud <- caret::confusionMatrix(glm.model.ud$pred$pred, glm.model.ud$pred$obs, mode = "everything")
 
 # Get the performance metrics from the model and save for comparison
-performance <- getTrainPerf(glm.model)
-model_results <- data.frame("Model" = "GLM", "ROC" = performance[,1], "Accuracy" = glm.cm[1], "Kappa" = glm.cm[2],"Sensitivity" = performance[,2], "Specificity" = performance[,3])
+performance <- getTrainPerf(glm.model.ud)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'GLM'
+                        ,Data = 'Full'
+                        ,ROC = performance[,1]
+                        ,Accuracy = glm.cm.ud$overall[1]
+                        ,Kappa = glm.cm.ud$overall[2]
+                        ,F1 = glm.cm.ud$byClass[7]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+# RFE selection data set
+set.seed(1234)
+glm.model.md <- caret::train(Label ~.
+                          ,data = model_data
+                          ,family = 'binomial'
+                          ,method = 'glm'
+                          ,trControl = fitControl
+                          ,metric = "ROC")
+
+# Get the confusion matrix
+glm.cm.md <- caret::confusionMatrix(glm.model.md$pred$pred, glm.model.md$pred$obs, mode = "everything")
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(glm.model.md)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'GLM'
+                        ,Data = 'RFE Selection'
+                        ,ROC = performance[,1]
+                        ,Accuracy = glm.cm.md$overall[1]
+                        ,Kappa = glm.cm.md$overall[2]
+                        ,F1 = glm.cm.md$byClass[7]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+# Low correlation data set
+set.seed(1234)
+glm.model.lc <- caret::train(Label ~.
+                          ,data = use_data_lc
+                          ,family = 'binomial'
+                          ,method = 'glm'
+                          ,trControl = fitControl
+                          ,metric = "ROC")
+
+# Get the confusion matrix
+glm.cm.lc <- caret::confusionMatrix(glm.model.lc$pred$pred, glm.model.lc$pred$obs, mode = "everything")
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(glm.model.lc)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'GLM'
+                        ,Data = 'Low Correlation'
+                        ,ROC = performance[,1]
+                        ,Accuracy = glm.cm.lc$overall[1]
+                        ,Kappa = glm.cm.lc$overall[2]
+                        ,F1 = glm.cm.lc$byClass[7]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+rownames(model_results) <- NULL
+
+# Disable parallel processing and release resources
+stopCluster(cluster)
+registerDoSEQ()
+
 ```
 
-```{r glm_roc, echo = FALSE, out.width = '350px', fig.cap = 'GLM ROC Plot', fig.align = "center", fig.pos = 'H'}
-glm.ROC <- roc(model_data$Label, glm.model$pred$Normal)
-plot(glm.ROC, col = "blue")
-auc(glm.ROC)
+```{r glm_roc, echo = FALSE}
+
+kable(model_results, caption = "Model Results", booktabs = TRUE) %>% 
+        kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
+
+glm.ROC <- roc(glm.model.ud$pred$obs, glm.model.ud$pred$Normal)
+plot(glm.ROC, col = 'blue', main = paste('GLM - Area under the curve (AUC):', round(auc(glm.ROC),2)))
 
 # Print model coefficients
-glm.model$finalModel$coefficients
+coefficients <- as.data.frame(glm.model.ud$finalModel$coefficients)
+
+kable(coefficients, caption = "GLM Model Coefficients", booktabs = TRUE) %>% 
+        kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
+
 ```
 
 \subsection{Support Vector Machine} 
 
 The Kappa statistic (or value) is a metric that compares an Observed Accuracy with an Expected Accuracy (random chance). The kappa statistic is used not only to evaluate a single classifier, but also to evaluate classifiers amongst themselves. In addition, it takes into account random chance (agreement with a random classifier), which generally means it is less misleading than simply using accuracy as a metric (an Observed Accuracy of 80% is a lot less impressive with an Expected Accuracy of 75% versus an Expected Accuracy of 50%). Computation of Observed Accuracy and Expected Accuracy is integral to comprehension of the kappa statistic, and is most easily illustrated through use of a confusion matrix. Lets begin with a simple confusion matrix from a simple binary classification of Cats and Dogs [@82187]
+
+```{r svm_models, echo = FALSE}
+# Enable parallel processing and reserve resources
+cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
+registerDoParallel(cluster)
+
+
+# Set up training conditions - must use LOOCV
+fitControl <- trainControl(method = "LOOCV"
+                           ,classProbs = TRUE 
+                           ,summaryFunction = twoClassSummary
+                           ,savePredictions = 'final')
+
+# Full data set
+set.seed(1234)
+svm.model1 <- caret::train(Label ~ .
+                          ,data = use_data 
+                          ,method = "svmRadial"
+                          ,trControl = fitControl
+                          ,metric = "Accuracy")
+
+# Get the confusion matrix
+svm.cm1 <- caret::confusionMatrix(svm.model1$pred$pred, svm.model1$pred$obs, mode = "everything")
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(svm.model1)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'SVM'
+                        ,Data = 'Full'
+                        ,ROC = performance[,1]
+                        ,Accuracy = svm.cm1$overall[1]
+                        ,Kappa = svm.cm1$overall[2]
+                        ,F1 = svm.cm1$byClass[7]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+# RFE selection data set
+set.seed(1234)
+svm.model2 <- caret::train(Label ~ .
+                          ,data = model_data
+                          ,method = "svmRadial"
+                          ,trControl = fitControl
+                          ,metric = "Accuracy")
+
+# Get the confusion matrix
+svm.cm2 <- caret::confusionMatrix(svm.model2$pred$pred, svm.model2$pred$obs, mode = "everything")
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(svm.model2)
+model_results <- rbind(model_results
+                       ,data.frame(Model = 'SVM'
+                                   ,Data = 'RFE Selection'
+                                   ,ROC = performance[,1]
+                                   ,Accuracy = svm.cm2$overall[1]
+                                   ,Kappa = svm.cm2$overall[2]
+                                   ,F1 = svm.cm2$byClass[7]
+                                   ,Sensitivity = performance[,2]
+                                   ,Specificity = performance[,3]))
+
+# Low correlation data set
+set.seed(1234)
+svm.model3 <- caret::train(Label ~ .
+                           ,data = use_data_lc
+                           ,method = "svmRadial"
+                           ,trControl = fitControl
+                           ,metric = "Accuracy")
+
+# Get the confusion matrix
+svm.cm3 <- caret::confusionMatrix(svm.model3$pred$pred, svm.model3$pred$obs, mode = "everything")
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(svm.model3)
+model_results <- rbind(model_results
+                       ,data.frame(Model = 'SVM'
+                                   ,Data = 'Low Correlation'
+                                   ,ROC = performance[,1]
+                                   ,Accuracy = svm.cm3$overall[1]
+                                   ,Kappa = svm.cm3$overall[2]
+                                   ,F1 = svm.cm3$byClass[7]
+                                   ,Sensitivity = performance[,2]
+                                   ,Specificity = performance[,3]))
+
+rownames(model_results) <- NULL
+
+# Disable parallel processing and release resources
+stopCluster(cluster)
+registerDoSEQ()
+
+```
+
+```{r svm_roc, echo = FALSE}
+
+kable(model_results, caption = "Model Results", booktabs = TRUE) %>% 
+        kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
+
+svm.ROC <- roc(svm.model1$pred$obs, svm.model1$pred$Normal)
+plot(svm.ROC, col = 'blue', main = paste('SVM - Area under the curve (AUC):', round(auc(svm.ROC),2)))
+
+```
+
+\subsection{k-Nearest Neighbor} 
+
+```{r knn_models, echo = FALSE}
+
+# Enable parallel processing and reserve resources
+cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
+registerDoParallel(cluster)
+
+# Set up training conditions - must use LOOCV
+fitControl <- trainControl(method = "LOOCV"
+                           ,classProbs = TRUE 
+                           ,summaryFunction = twoClassSummary
+                           ,savePredictions = 'final')
+
+# Full data set
+set.seed(1234)
+knn.model.ud <- caret::train(Label ~ .
+                          ,data = use_data
+                          ,method = "knn"
+                          ,trControl = fitControl
+                          ,metric = "ROC" 
+                          ,preProc = c("center", "scale")
+                          ,tuneLength = 20)
+
+# Get the confusion matrix
+knn.cm.ud <- caret::confusionMatrix(knn.model.ud$pred$pred, knn.model.ud$pred$obs, mode = "everything")
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(knn.model.ud)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'kNN'
+                        ,Data = 'Full'
+                        ,ROC = performance[,1]
+                        ,Accuracy = knn.cm.ud$overall[1]
+                        ,Kappa = knn.cm.ud$overall[2]
+                        ,F1 = knn.cm.ud$byClass[7]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+# RFE selection data set
+set.seed(1234)
+knn.model.md <- caret::train(Label ~ .
+                             ,data = model_data
+                             ,method = "knn"
+                             ,trControl = fitControl
+                             ,metric = "ROC" 
+                             ,preProc = c("center", "scale")
+                             ,tuneLength = 20)
+
+# Get the confusion matrix
+knn.cm.md <- caret::confusionMatrix(knn.model.md$pred$pred, knn.model.md$pred$obs, mode = "everything")
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(knn.model.md)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'kNN'
+                        ,Data = 'RFE Selection'
+                        ,ROC = performance[,1]
+                        ,Accuracy = knn.cm.md$overall[1]
+                        ,Kappa = knn.cm.md$overall[2]
+                        ,F1 = knn.cm.md$byClass[7]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+# Low correlation data set
+set.seed(1234)
+knn.model.lc <- caret::train(Label ~ .
+                             ,data = use_data_lc
+                             ,method = "knn"
+                             ,trControl = fitControl
+                             ,metric = "ROC" 
+                             ,preProc = c("center", "scale")
+                             ,tuneLength = 20)
+
+# Get the confusion matrix
+knn.cm.lc <- caret::confusionMatrix(knn.model.lc$pred$pred, knn.model.lc$pred$obs, mode = "everything")
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(knn.model.lc)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'kNN'
+                        ,Data = 'Low Correlation'
+                        ,ROC = performance[,1]
+                        ,Accuracy = knn.cm.lc$overall[1]
+                        ,Kappa = knn.cm.lc$overall[2]
+                        ,F1 = knn.cm.lc$byClass[7]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+rownames(model_results) <- NULL
+
+# Disable parallel processing and release resources
+stopCluster(cluster)
+registerDoSEQ()
+
+```
+
+```{r knn_roc, echo = FALSE}
+
+kable(model_results, caption = "Model Results", booktabs = TRUE) %>% 
+        kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
+
+knn.ROC <- roc(knn.model.md$pred$obs, knn.model.md$pred$Normal)
+plot(knn.ROC, col = 'blue', main = paste('SVM - Area under the curve (AUC):', round(auc(knn.ROC),2)))
+
+```

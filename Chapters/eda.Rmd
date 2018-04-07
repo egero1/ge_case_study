@@ -154,6 +154,17 @@ rpart.plot(tree)
 
 ```
 
+__Figure 6__ provides the Receiver Operating Characteristic curve (ROC). The ROC curve is a useful tool for evaluating predictive models and shows how well the model can distinguish between the true positives and the true negatives. The curve is the result of plotting the sensitivity against 1 - specificty. The further the curve is from the diagonal line, the better the model is at discriminating between positives and negatives. A ROC curve that hugs the diagonal line means the model's predictive capabilities is not much better than chance.
+
+Another useful statistic is the Area Under the Curve (AUC). This metric also measures how well the model predicts. An AUC of '1' indicates that the model perfectly separates the true positives from the true negatives, while an AUC of '0.5' means the model is not able to separate the true positives from the true negatives. ROC curves and AUC measures will also be used to evaluate the fitted models.
+
+```{r naive_roc, echo = FALSE, out.width = '350px', fig.cap = 'Naive ROC Curve', fig.align = "center", fig.pos = 'H'}
+tree.pred <- predict(tree, use_data)
+tree.ROC <- roc(use_data$Label, tree.pred[,1])
+plot(tree.ROC, col = 'blue', main = paste('Area under the curve (AUC):', round(auc(tree.ROC),2)))
+
+```
+
 \subsection{Variable Importance}
 
 It is always beneficial to reduce the complexity and dimensionality of a model whenever possible. One way to simplify a model is to reduce the number of predictors to include only those that actually provide value for the model. Including more predictors than needed increases the run-time for the model, and makes it prone to overfitting. An overfit model is one that fits the training data too well because it has learned the details and the noise. While it may provide excellent results on the training data, it typically performs poorly on new data.
@@ -199,10 +210,9 @@ model_data <- use_data %>%
 
 ```
 
-The variables selected through the 'rfe' function are listed in __Table 5__.
+The predictors selected through the 'rfe' function are listed in __Table 5__. This list includes all but three of the variables selected in the naive model. The predictors selected by removing the highly correlated varaiables are listed in __Table 6__. This list of predictors is quite different from those selected in the naive model.
 
-decision tree
-```{r common_predictors, echo = FALSE, comment = NA}
+```{r selection, echo = FALSE, comment = NA}
 
 # Compare the two data sets
 predictors_md <- as.data.frame(colnames(model_data[-17]))
@@ -217,7 +227,13 @@ kable(predictors_md, caption = "Backwards Selection Variables", booktabs = TRUE)
 
 kable(predictors_lc, caption = "Low Correlation Predictor Variables", booktabs = TRUE) %>% 
         kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
+```
 
+\FloatBarrier
+
+__Table 7__ lists the six variables that are common for both selection sets. It would preferrable if more variables were common between the two data sets, but it is not too surprising that the lists differ. Simply removing the variables that are highly correlated does not necessarily mean that the remaining varaibles are good predictors. Models will be fitted using the full data set, the backwards selection data set and the low correlation data set so that the results may be compared.
+
+```{r common, echo = FALSE, comment = NA}
 kable(common_predictors, caption = "Common Predictor Variables", booktabs = TRUE) %>% 
         kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
 
