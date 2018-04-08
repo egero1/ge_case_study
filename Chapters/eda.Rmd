@@ -119,8 +119,11 @@ Since the evaluation metrcis are defined in terms of TP, TN, FP and FN rates, de
 * Accuracy - proportion of true positive or true negative = (TN + TP)/(TN + TP + FN + FP)
 * Precision - proportion of correctly predicted positive observations to the total predicted positive observations = TP/(TP + FP)
 * F1 - weighted average of precision and recall = 2 * (TP/(TP + FN) * TP/(TP + FP))/(TP/(TP + FN) + TP/(TP + FP))
+* Kappa - (observed accuracy - expected accuracy)/(1 - expected accuracy) 
+    + observed accuracy = (TN + TP) / (TN + TP + FN + FP)
+    + expected accuracy = (((TN + FP) * (TN + FN)) / (TN + TP + FN + FP) + (TN * (FP + TP))  / (TN + TP + FN + FP)) / (TN + TP + FN + FP)
 
-F1 takes both false positives and false negatives into account, so it can be more useful than accuracy alone, especially when there is an uneven class distribution.
+F1 takes both false positives and false negatives into account, so it can be more useful than accuracy alone, especially when there is an uneven class distribution. The Kappa statistic will also be used for model evaluation and comparison. The Kappa statistic compares the observed accuracy with the expected accuracy and takes random chance into account [@82187].
 
 \subsection{Naive Model}
 

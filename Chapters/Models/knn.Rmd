@@ -1,10 +1,23 @@
 \subsection{k-Nearest Neighbor} 
 
+```{r knn_results, echo = FALSE}
+
+# Create a data frame to hold the results
+knn_results <- data.frame(Model = character()
+                             ,Data = character()
+                             ,Accuracy = numeric()
+                             ,Kappa = numeric()
+                             ,F1 = numeric()
+                             ,ROC = numeric()
+                             ,Sensitivity = numeric()
+                             ,Specificity = numeric())
+```
+
 ```{r knn_models, echo = FALSE}
 
 # Enable parallel processing and reserve resources
-cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
-registerDoParallel(cluster)
+#cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
+#registerDoParallel(cluster)
 
 # Set up training conditions - must use LOOCV
 fitControl <- trainControl(method = "LOOCV"
@@ -13,21 +26,23 @@ fitControl <- trainControl(method = "LOOCV"
                            ,savePredictions = 'final')
 
 # Full data set
-set.seed(1234)
-knn.model.ud <- caret::train(Label ~ .
-                          ,data = use_data
-                          ,method = "knn"
-                          ,trControl = fitControl
-                          ,metric = "ROC" 
-                          ,preProc = c("center", "scale")
-                          ,tuneLength = 20)
+#set.seed(1234)
+#knn.model.ud <- caret::train(Label ~ .
+#                          ,data = use_data
+#                          ,method = "knn"
+#                          ,trControl = fitControl
+#                          ,metric = "ROC" 
+#                          ,preProc = c("center", "scale")
+#                          ,tuneLength = 20)
+
+knn.model.ud <- readRDS('../../Models/knn_use_data.rds')
 
 # Get the confusion matrix
 knn.cm.ud <- caret::confusionMatrix(knn.model.ud$pred$pred, knn.model.ud$pred$obs, mode = "everything")
 
 # Get the performance metrics from the model and save for comparison
 performance <- getTrainPerf(knn.model.ud)
-model_results <- rbind(model_results
+knn_results <- rbind(knn_results
                         ,data.frame(Model = 'kNN'
                         ,Data = 'Full'
                         ,Accuracy = knn.cm.ud$overall[1]
@@ -38,21 +53,23 @@ model_results <- rbind(model_results
                         ,Specificity = performance[,3]))
 
 # RFE selection data set
-set.seed(1234)
-knn.model.md <- caret::train(Label ~ .
-                             ,data = model_data
-                             ,method = "knn"
-                             ,trControl = fitControl
-                             ,metric = "ROC" 
-                             ,preProc = c("center", "scale")
-                             ,tuneLength = 20)
+#set.seed(1234)
+#knn.model.md <- caret::train(Label ~ .
+#                             ,data = model_data
+#                             ,method = "knn"
+#                             ,trControl = fitControl
+#                             ,metric = "ROC" 
+#                             ,preProc = c("center", "scale")
+#                             ,tuneLength = 20)
+
+knn.model.md <- readRDS('../../Models/knn_model_data.rds')
 
 # Get the confusion matrix
 knn.cm.md <- caret::confusionMatrix(knn.model.md$pred$pred, knn.model.md$pred$obs, mode = "everything")
 
 # Get the performance metrics from the model and save for comparison
 performance <- getTrainPerf(knn.model.md)
-model_results <- rbind(model_results
+knn_results <- rbind(knn_results
                         ,data.frame(Model = 'kNN'
                         ,Data = 'RFE Selection'
                         ,Accuracy = knn.cm.md$overall[1]
@@ -63,21 +80,23 @@ model_results <- rbind(model_results
                         ,Specificity = performance[,3]))
 
 # Low correlation data set
-set.seed(1234)
-knn.model.lc <- caret::train(Label ~ .
-                             ,data = use_data_lc
-                             ,method = "knn"
-                             ,trControl = fitControl
-                             ,metric = "ROC" 
-                             ,preProc = c("center", "scale")
-                             ,tuneLength = 20)
+#set.seed(1234)
+#knn.model.lc <- caret::train(Label ~ .
+#                             ,data = use_data_lc
+#                             ,method = "knn"
+#                             ,trControl = fitControl
+#                             ,metric = "ROC" 
+#                             ,preProc = c("center", "scale")
+#                             ,tuneLength = 20)
+
+knn.model.lc <- readRDS('../../Models/knn_use_data_lc.rds')
 
 # Get the confusion matrix
 knn.cm.lc <- caret::confusionMatrix(knn.model.lc$pred$pred, knn.model.lc$pred$obs, mode = "everything")
 
 # Get the performance metrics from the model and save for comparison
 performance <- getTrainPerf(knn.model.lc)
-model_results <- rbind(model_results
+knn_results <- rbind(knn_results
                         ,data.frame(Model = 'kNN'
                         ,Data = 'Low Correlation'
                         ,Accuracy = knn.cm.lc$overall[1]
@@ -87,17 +106,17 @@ model_results <- rbind(model_results
                         ,Sensitivity = performance[,2]
                         ,Specificity = performance[,3]))
 
-rownames(model_results) <- NULL
+rownames(knn_results) <- NULL
 
 # Disable parallel processing and release resources
-stopCluster(cluster)
-registerDoSEQ()
+#stopCluster(cluster)
+#registerDoSEQ()
 
 ```
 
 ```{r knn_roc, echo = FALSE}
 
-kable(model_results, caption = "Model Results", booktabs = TRUE) %>% 
+kable(knn_results, caption = "kNN Model Results", booktabs = TRUE) %>% 
         kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
 
 knn.ROC <- roc(knn.model.md$pred$obs, knn.model.md$pred$Normal)

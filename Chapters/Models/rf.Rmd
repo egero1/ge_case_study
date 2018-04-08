@@ -1,10 +1,23 @@
 \subsection{Random Forest Models}
 
+```{r rf_results, echo = FALSE}
+
+# Create a data frame to hold the results
+rf_results <- data.frame(Model = character()
+                             ,Data = character()
+                             ,Accuracy = numeric()
+                             ,Kappa = numeric()
+                             ,F1 = numeric()
+                             ,ROC = numeric()
+                             ,Sensitivity = numeric()
+                             ,Specificity = numeric())
+```
+
 ```{r rf_models, echo = FALSE}
 
 # Enable parallel processing and reserve resources
-cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
-registerDoParallel(cluster)
+#cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
+#registerDoParallel(cluster)
 
 # Set up training conditions - must use LOOCV
 fitControl <- trainControl(method = "LOOCV"
@@ -14,18 +27,20 @@ fitControl <- trainControl(method = "LOOCV"
                            ,allowParallel = TRUE)
 
 # Full dat set
-set.seed(1234)
-rf.model.ud <- caret::train(Label ~.
-            ,data = use_data
-            ,method = 'rf'
-            ,trControl = fitControl
-            ,metric = "ROC")
+#set.seed(1234)
+#rf.model.ud <- caret::train(Label ~.
+#            ,data = use_data
+#            ,method = 'rf'
+#            ,trControl = fitControl
+#            ,metric = "ROC")
+
+rf.model.ud <- readRDS('../../Models/rf_use_data.rds')
 
 rf.cm.ud <- caret::confusionMatrix(rf.model.ud$pred$pred, rf.model.ud$pred$obs)
 
 # Get the performance metrics from the model and save for comparison
 performance <- getTrainPerf(rf.model.ud)
-model_results <- rbind(model_results
+rf_results <- rbind(rf_results
                         ,data.frame(Model = 'Random Forest'
                         ,Data = 'Full'
                         ,Accuracy = rf.cm.ud$overall[1]
@@ -36,18 +51,20 @@ model_results <- rbind(model_results
                         ,Specificity = performance[,3]))
 
 # RFE selection data set
-set.seed(1234)
-rf.model.md <- caret::train(Label ~.
-                            ,data = model_data
-                            ,method = 'rf'
-                            ,trControl = fitControl
-                            ,metric = "ROC")
+#set.seed(1234)
+#rf.model.md <- caret::train(Label ~.
+#                            ,data = model_data
+#                            ,method = 'rf'
+#                            ,trControl = fitControl
+#                            ,metric = "ROC")
+
+rf.model.md <- readRDS('../../Models/rf_model_data.rds')
 
 rf.cm.md <- caret::confusionMatrix(rf.model.md$pred$pred, rf.model.md$pred$obs)
 
 # Get the performance metrics from the model and save for comparison
 performance <- getTrainPerf(rf.model.md)
-model_results <- rbind(model_results
+rf_results <- rbind(rf_results
                         ,data.frame(Model = 'Random Forest'
                         ,Data = 'RFE Selection'
                         ,Accuracy = rf.cm.md$overall[1]
@@ -58,18 +75,20 @@ model_results <- rbind(model_results
                         ,Specificity = performance[,3]))
 
 # Low correlation data set
-set.seed(1234)
-rf.model.lc <- caret::train(Label ~.
-                            ,data = use_data_lc
-                            ,method = 'rf'
-                            ,trControl = fitControl
-                            ,metric = "ROC")
+#set.seed(1234)
+#rf.model.lc <- caret::train(Label ~.
+#                            ,data = use_data_lc
+#                            ,method = 'rf'
+#                            ,trControl = fitControl
+#                            ,metric = "ROC")
+
+rf.model.lc <- readRDS('../../Models/rf_use_data_lc.rds')
 
 rf.cm.lc <- caret::confusionMatrix(rf.model.lc$pred$pred, rf.model.lc$pred$obs)
 
 # Get the performance metrics from the model and save for comparison
 performance <- getTrainPerf(rf.model.lc)
-model_results <- rbind(model_results
+rf_results <- rbind(rf_results
                         ,data.frame(Model = 'Random Forest'
                         ,Data = 'Low Correlation'
                         ,Accuracy = rf.cm.lc$overall[1]
@@ -79,20 +98,20 @@ model_results <- rbind(model_results
                         ,Sensitivity = performance[,2]
                         ,Specificity = performance[,3]))
 
-rownames(model_results) <- NULL
+rownames(rf_results) <- NULL
 
 # Disable parallel processing and release resources
-stopCluster(cluster)
-registerDoSEQ()
+#stopCluster(cluster)
+#registerDoSEQ()
 
 ```
 
 ```{r rf_roc, echo = FALSE}
 
-kable(model_results, caption = "Model Results", booktabs = TRUE) %>% 
+kable(rf_results, caption = "Random Forest Model Results", booktabs = TRUE) %>% 
         kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
 
-rf.ROC <- roc(rf.model.lc$pred$obs, knn.model.lc$pred$Normal)
+rf.ROC <- roc(rf.model.md$pred$obs, rf.model.md$pred$Normal)
 plot(rf.ROC, col = 'blue', main = paste('RF - Area under the curve (AUC):', round(auc(rf.ROC),2)))
 
 ```

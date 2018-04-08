@@ -26,5 +26,5 @@ __In EDA dicuss how the data is combined into one data set since all labels are 
 
 \FloatBarrier
 
-//```{r child = 'Models/rf.RMD'}
-//```
+```{r child = 'Models/rf.RMD'}
+```

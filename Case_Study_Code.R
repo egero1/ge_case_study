@@ -323,7 +323,7 @@ coefficients <- as.data.frame(glm.model.ud$finalModel$coefficients)
 coefficients
 
 # Save models in case we want to review them later
-saveRDS(model_results, "final_results.rds")
+saveRDS(model_results, "model_results.rds")
 saveRDS(glm.model.ud, "Models/glm_use_data.rds")
 saveRDS(glm.model.md, "Models/glm_model_data.rds")
 saveRDS(glm.model.lc, "Models/glm_use_data_lc.rds")
@@ -423,7 +423,7 @@ svm.ROC <- roc(svm.model.ud$pred$obs, svm.model.ud$pred$Normal)
 plot(svm.ROC, col = 'blue', main = paste('SVM - Area under the curve (AUC):', round(auc(svm.ROC),2)))
 
 # Save models in case we want to review them later
-saveRDS(model_results, "final_results.rds")
+saveRDS(model_results, "model_results.rds")
 saveRDS(svm.model.ud, "Models/svm_use_data.rds")
 saveRDS(svm.model.md, "Models/svm_model_data.rds")
 saveRDS(svm.model.lc, "Models/svm_use_data_lc.rds")
@@ -529,7 +529,7 @@ plot(knn.ROC, col = 'blue', main = paste('kNN - Area under the curve (AUC):', ro
 plot(knn.model.md)
 
 # Save models in case we want to review them later
-saveRDS(model_results, "final_results.rds")
+saveRDS(model_results, "model_results.rds")
 saveRDS(knn.model.ud, "Models/knn_use_data.rds")
 saveRDS(knn.model.md, "Models/knn_model_data.rds")
 saveRDS(knn.model.lc, "Models/knn_use_data_lc.rds")
@@ -746,12 +746,9 @@ saveRDS(rf.model.lc, "Models/rf_use_data_lc.rds")
 # https://www.analyticsvidhya.com/blog/2016/12/practical-guide-to-implement-machine-learning-with-caret-package-in-r-with-practice-problem/
 ###############################################################################
 
-library(parallel)
-library(doParallel)
+# Enable parallel processing and reserve resources
 cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
 registerDoParallel(cluster)
-
-train_data <- model_data
 
 # Set up training conditions - must use LOOCV
 fitControl <- trainControl(method = "LOOCV"
@@ -760,186 +757,78 @@ fitControl <- trainControl(method = "LOOCV"
                            ,savePredictions = 'final'
                            ,allowParallel = TRUE)
 
-# Third model is a k-Nearest Neighbor
+# Full data set
 set.seed(1234)
-nnet.model <- caret::train(Label2 ~.
-                         ,data = train_data
-                         ,method = 'nnet'
-                         ,trControl = fitControl
-                         ,metric = "ROC")
+nnet.model.ud <- caret::train(Label ~.
+                              ,data = use_data
+                              ,method = 'nnet'
+                              ,trControl = fitControl
+                              ,metric = "ROC")
 
-stopCluster(cluster)
-registerDoSEQ()
-
-nnet.cm <- caret::confusionMatrix(nnet.model$pred$pred, nnet.model$pred$obs)
+nnet.cm.ud <- caret::confusionMatrix(nnet.model.ud$pred$pred, nnet.model.ud$pred$obs)
 
 # Get the performance metrics from the model and save for comparison
-performance <- getTrainPerf(rf.model)
-nnet_results <- data.frame("Model" = "Random Forest"
-                         ,"Data" = "model_data"
-                         ,"ROC" = performance[,1]
-                         ,"Accuracy" = nnet.cm$overall[1]
-                         ,"Kappa" = nnet.cm$overall[2]
-                         ,"Sensitivity" = performance[,2]
-                         ,"Specificity" = performance[,3])
+performance <- getTrainPerf(nnet.model.ud)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'Neural Network'
+                        ,Data = 'Full'
+                        ,Accuracy = nnet.cm.ud$overall[1]
+                        ,Kappa = nnet.cm.ud$overall[2]
+                        ,F1 = nnet.cm.ud$byClass[7]
+                        ,ROC = performance[,1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+rownames(model_results) <- NULL
+###########################################################################
+# Set up training conditions - must use LOOCV
+fitControl <- trainControl(method = "repeatedcv"
+                           ,number = 10
+                           ,repeats = 5
+                           ,classProbs = TRUE 
+                           ,summaryFunction = twoClassSummary
+                           ,savePredictions = 'final'
+                           ,allowParallel = TRUE
+                           ,verboseIter = TRUE)
+
+nnetGrid <-  expand.grid(size = seq(from = 1, to = 10, by = 1),
+                         decay = seq(from = 0.1, to = 0.5, by = 0.1))
+
+# Full data set
+set.seed(1234)
+nnet.model.cv <- caret::train(Label ~.
+                              ,data = model_data
+                              ,method = 'nnet'
+                              ,trControl = fitControl
+                              ,tuneGrid = nnetGrid
+                              ,metric = "ROC")
+
+nnet.cm.cv <- caret::confusionMatrix(nnet.model.cv$pred$pred, nnet.model.cv$pred$obs)
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(nnet.model.cv)
+model_results <- rbind(model_results
+                       ,data.frame(Model = 'Neural Network'
+                                   ,Data = 'Full'
+                                   ,Accuracy = nnet.cm.cv$overall[1]
+                                   ,Kappa = nnet.cm.cv$overall[2]
+                                   ,F1 = nnet.cm.cv$byClass[7]
+                                   ,ROC = performance[,1]
+                                   ,Sensitivity = performance[,2]
+                                   ,Specificity = performance[,3]))
+
+rownames(model_results) <- NULL
+
+# Disable parallel processing and release resources
+stopCluster(cluster)
+registerDoSEQ()
 
 nnet.ROC <- roc(nnet.model$pred$obs, nnet.model$pred$Normal)
 plot(nnet.ROC, col = "blue")
 auc(nnet.ROC)
 
-# Add model results to dataframe for comparison
-final_results <- rbind(final_results, nnet_results)
-
 # Save models in case we want to review them later
-saveRDS(final_results, "final_results.rds")
+saveRDS(model_results, "model_results.rds")
 saveRDS(nnet.model, "Models/nnet_use_data.rds")
 saveRDS(nnet.model, "Models/nnet_use_data_lc.rds")
 saveRDS(nnet.model, "Models/nnet_model_data.rds")
-
-##################################################################################################################
-
-
-#############junk
-
-
-
-
-
-
-
-
-
-
-###############################################################################
-# GLM - LOOCV  need to implement LOOCV
-# https://gerardnico.com/lang/r/cross_validation
-# https://rpubs.com/maulikpatel/226237
-# http://www.rebeccabarter.com/blog/2017-11-17-caret_tutorial/
-# https://www.analyticsvidhya.com/blog/2016/12/practical-guide-to-implement-machine-learning-with-caret-package-in-r-with-practice-problem/
-###############################################################################
-
-library(glm)
-library(boot)
-
-glm.fit <- glm(Label2 ~., data = use_data, family = binomial)
-cv <- cv.glm(use_data, glm.fit)
-#cv.glm(trainData, glm.fit)$delta
-glm.fit.probs <- predict(glm.fit, testData, type = "response")
-glm.pred <- rep("Abnormal", 781)
-glm.pred[glm.fit.probs > .5] = "Normal"
-
-###############################################################################
-# SVM - LOOCV Caret
-# https://stats.stackexchange.com/questions/136274/leave-one-subject-out-cv-method
-###############################################################################
-
-fitControl <- trainControl(method = "LOOCV",
-                           classProbs = TRUE, 
-                           summaryFunction = twoClassSummary)
-
-svm.model2 <- caret::train(Label2 ~ .
-                           ,data = model_data 
-                           ,method = "svmRadial"
-                           ,trControl = fitControl
-                           ,metric = "ROC" 
-                           ,preProc = c("center", "scale"))
-
-# Save models to prevent the need to rerun
-saveRDS(svm.model, "loocv_svm.rds")
-saveRDS(svm.model2, "loocv_svm2.rds")
-
-#do I need to repredict?
-set.seed(1234)
-fitControl <- trainControl(classProbs = TRUE, 
-                           summaryFunction = twoClassSummary)
-
-test.results <- matrix(NA, nrow = dim(use_data)[1], ncol = 2)
-for(row in 1:dim(model_data[1])) {
-        svm.final <- caret::train(Label2 ~ .
-                                  ,data = model_data[-row,]
-                                  ,method = "svmRadial"
-                                  ,metric = "ROC" 
-                                  ,preProc = c("center", "scale")
-                                  ,trControl = fitControl
-                                  ,tuneGrid = data.frame(C = 1, sigma = 0.01985963))
-}
-test.pred <- rep("Abnormal", dim(model_data)[1])
-test.pred[test.results[,2] > .5] = "Normal"
-finalResults <- as.data.frame(cbind(test.results, full$PatientNumMasked, test.pred, full$Label2))
-
-confusionMatrix(finalResults$glm.pred, finalResults$V5)
-caret::confusionMatrix(as.factor(pred), model_data$Label2, mode = "everything", positive = 'Normal')
-
-svm.cm <- caret::confusionMatrix(svm.model$pred$pred[which(svm.model$pred$C == 1)], model_data$Label2, mode = "everything", positive = 'Normal')
-svm.ROC <- roc(model_data$Label2, svm.model$pred$Normal[which(svm.model$pred$C == 1)])
-plot(svm.ROC, col = "blue")
-auc(svm.ROC)
-
-svm.cm2 <- caret::confusionMatrix(svm.model2$pred$pred[which(svm.model2$pred$C == 1)], model_data$Label2, mode = "everything", positive = 'Normal')
-svm.ROC2 <- roc(model_data$Label2, svm.model2$pred$Normal[which(svm.model2$pred$C == 1)])
-plot(svm.ROC2, col = "blue")
-auc(svm.ROC2)
-
-svm.model2$finalModel
-plot(svm.model2)
-
-#####################################################################################
-glm.results <- matrix(NA, nrow = dim(use_data)[1], ncol = 2)
-for(row in 1:dim(use_data[1])) {
-        glmFit <- glm(Label2 ~ ., data = use_data[-row,], family = binomial)
-        glmFit.response <- predict(glmFit, use_data[row,], type = "response")
-        glm.results[row,] <- c(row, glmFit.response)
-}
-glm.pred <- rep("Abnormal", dim(use_data)[1])
-glm.pred[results[,2] > .5] = "Normal"
-finalResults <- as.data.frame(cbind(glm.results, full$PatientNumMasked, glm.pred, full$Label2))
-
-confusionMatrix(finalResults$glm.pred, finalResults$V5)
-
-
-# https://www.r-bloggers.com/random-forests-in-r/
-rf.results <- matrix(NA, nrow = dim(use_data)[1], ncol = 2)
-for(row in 1:dim(use_data[1])) {
-        rfFit <- randomForest(Label2 ~ ., data = use_data[-row,])
-        rfFit.response <- predict(rfFit, use_data[row,], type = "response")
-        rf.results[row,] <- c(row, rfFit.response)
-}
-
-plot(rfFit)
-
-rf.pred <- rep("Abnormal", dim(use_data)[1])
-rf.pred[rf.results[,2] == 2] = "Normal"
-rf.finalResults <- as.data.frame(cbind(rf.results, full$PatientNumMasked, rf.pred, full$Label2))
-
-confusionMatrix(rf.finalResults$rf.pred, rf.finalResults$V5)
-
-# https://www.r-bloggers.com/random-forests-in-r/
-rf.results2 <- matrix(NA, nrow = 20, ncol = 2)
-for(row in 1:20) {
-        rfFit <- randomForest(Label2 ~ ., data = use_data[-row,])
-        rfFit.response <- predict(rfFit, use_data[row,], type = "raw")
-        rf.results2[row,] <- c(row, rfFit.response)
-}
-
-
-# set up data
-# create loop
-# remove 1 row (x1, y1)
-# fit model
-# predict based on model
-# loop until done
-
-# noticed in the data that not all quadrants have values for each patient
-
-
-
-
-
-
-
-
-
-
-
-
-
