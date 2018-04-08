@@ -1,0 +1,103 @@
+\subsection{Support Vector Machine} 
+
+The Kappa statistic (or value) is a metric that compares an Observed Accuracy with an Expected Accuracy (random chance). The kappa statistic is used not only to evaluate a single classifier, but also to evaluate classifiers amongst themselves. In addition, it takes into account random chance (agreement with a random classifier), which generally means it is less misleading than simply using accuracy as a metric (an Observed Accuracy of 80% is a lot less impressive with an Expected Accuracy of 75% versus an Expected Accuracy of 50%). Computation of Observed Accuracy and Expected Accuracy is integral to comprehension of the kappa statistic, and is most easily illustrated through use of a confusion matrix. Lets begin with a simple confusion matrix from a simple binary classification of Cats and Dogs [@82187]
+
+```{r svm_models, echo = FALSE}
+# Enable parallel processing and reserve resources
+cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
+registerDoParallel(cluster)
+
+
+# Set up training conditions - must use LOOCV
+fitControl <- trainControl(method = "LOOCV"
+                           ,classProbs = TRUE 
+                           ,summaryFunction = twoClassSummary
+                           ,savePredictions = 'final')
+
+# Full data set
+set.seed(1234)
+svm.model.ud <- caret::train(Label ~ .
+                          ,data = use_data 
+                          ,method = "svmRadial"
+                          ,trControl = fitControl
+                          ,metric = "Accuracy")
+
+# Get the confusion matrix
+svm.cm.ud <- caret::confusionMatrix(svm.model.ud$pred$pred, svm.model.ud$pred$obs, mode = "everything")
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(svm.model.ud)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'SVM'
+                        ,Data = 'Full'
+                        ,Accuracy = svm.cm.ud$overall[1]
+                        ,Kappa = svm.cm.ud$overall[2]
+                        ,F1 = svm.cm.ud$byClass[7]
+                        ,ROC = performance[,1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+# RFE selection data set
+set.seed(1234)
+svm.model.md <- caret::train(Label ~ .
+                          ,data = model_data
+                          ,method = "svmRadial"
+                          ,trControl = fitControl
+                          ,metric = "Accuracy")
+
+# Get the confusion matrix
+svm.cm.md <- caret::confusionMatrix(svm.model.md$pred$pred, svm.model.md$pred$obs, mode = "everything")
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(svm.model.md)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'SVM'
+                        ,Data = 'RFE Selection'
+                        ,Accuracy = svm.cm.md$overall[1]
+                        ,Kappa = svm.cm.md$overall[2]
+                        ,F1 = svm.cm.md$byClass[7]
+                        ,ROC = performance[,1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+# Low correlation data set
+set.seed(1234)
+svm.model.lc <- caret::train(Label ~ .
+                           ,data = use_data_lc
+                           ,method = "svmRadial"
+                           ,trControl = fitControl
+                           ,metric = "Accuracy")
+
+# Get the confusion matrix
+svm.cm.lc <- caret::confusionMatrix(svm.model.lc$pred$pred, svm.model.lc$pred$obs, mode = "everything")
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(svm.model.lc)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'SVM'
+                        ,Data = 'Low Correlation'
+                        ,Accuracy = svm.cm.lc$overall[1]
+                        ,Kappa = svm.cm.lc$overall[2]
+                        ,F1 = svm.cm.lc$byClass[7]
+                        ,ROC = performance[,1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+rownames(model_results) <- NULL
+
+# Disable parallel processing and release resources
+stopCluster(cluster)
+registerDoSEQ()
+
+```
+
+```{r svm_roc, echo = FALSE}
+
+kable(model_results, caption = "Model Results", booktabs = TRUE) %>% 
+        kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
+
+svm.ROC <- roc(svm.model.ud$pred$obs, svm.model.ud$pred$Normal)
+plot(svm.ROC, col = 'blue', main = paste('SVM - Area under the curve (AUC):', round(auc(svm.ROC),2)))
+
+```
+

@@ -213,10 +213,10 @@ colnames(common_predictors) <- "Common Predictors"
 # Create a data frame to hold the results
 model_results <- data.frame(Model = character()
                           ,Data = character()
-                          ,ROC = numeric()
                           ,Accuracy = numeric()
                           ,Kappa = numeric()
                           ,F1 = numeric()
+                          ,ROC = numeric()
                           ,Sensitivity = numeric()
                           ,Specificity = numeric())
 
@@ -254,10 +254,10 @@ performance <- getTrainPerf(glm.model.ud)
 model_results <- rbind(model_results
                         ,data.frame(Model = 'GLM'
                         ,Data = 'Full'
-                        ,ROC = performance[,1]
                         ,Accuracy = glm.cm.ud$overall[1]
                         ,Kappa = glm.cm.ud$overall[2]
                         ,F1 = glm.cm.ud$byClass[7]
+                        ,ROC = performance[,1]
                         ,Sensitivity = performance[,2]
                         ,Specificity = performance[,3]))
 
@@ -278,10 +278,10 @@ performance <- getTrainPerf(glm.model.md)
 model_results <- rbind(model_results
                         ,data.frame(Model = 'GLM'
                         ,Data = 'RFE Selection'
-                        ,ROC = performance[,1]
                         ,Accuracy = glm.cm.md$overall[1]
                         ,Kappa = glm.cm.md$overall[2]
                         ,F1 = glm.cm.md$byClass[7]
+                        ,ROC = performance[,1]
                         ,Sensitivity = performance[,2]
                         ,Specificity = performance[,3]))
 
@@ -302,10 +302,10 @@ performance <- getTrainPerf(glm.model.lc)
 model_results <- rbind(model_results
                         ,data.frame(Model = 'GLM'
                         ,Data = 'Low Correlation'
-                        ,ROC = performance[,1]
                         ,Accuracy = glm.cm.lc$overall[1]
                         ,Kappa = glm.cm.lc$overall[2]
                         ,F1 = glm.cm.lc$byClass[7]
+                        ,ROC = performance[,1]
                         ,Sensitivity = performance[,2]
                         ,Specificity = performance[,3]))
 
@@ -360,10 +360,10 @@ performance <- getTrainPerf(svm.model.ud)
 model_results <- rbind(model_results
                         ,data.frame(Model = 'SVM'
                         ,Data = 'Full'
-                        ,ROC = performance[,1]
                         ,Accuracy = svm.cm.ud$overall[1]
                         ,Kappa = svm.cm.ud$overall[2]
                         ,F1 = svm.cm.ud$byClass[7]
+                        ,ROC = performance[,1]
                         ,Sensitivity = performance[,2]
                         ,Specificity = performance[,3]))
 
@@ -383,10 +383,10 @@ performance <- getTrainPerf(svm.model.md)
 model_results <- rbind(model_results
                         ,data.frame(Model = 'SVM'
                         ,Data = 'RFE Selection'
-                        ,ROC = performance[,1]
                         ,Accuracy = svm.cm.md$overall[1]
                         ,Kappa = svm.cm.md$overall[2]
                         ,F1 = svm.cm.md$byClass[7]
+                        ,ROC = performance[,1]
                         ,Sensitivity = performance[,2]
                         ,Specificity = performance[,3]))
 
@@ -406,10 +406,10 @@ performance <- getTrainPerf(svm.model.lc)
 model_results <- rbind(model_results
                         ,data.frame(Model = 'SVM'
                         ,Data = 'Low Correlation'
-                        ,ROC = performance[,1]
                         ,Accuracy = svm.cm.lc$overall[1]
                         ,Kappa = svm.cm.lc$overall[2]
                         ,F1 = svm.cm.lc$byClass[7]
+                        ,ROC = performance[,1]
                         ,Sensitivity = performance[,2]
                         ,Specificity = performance[,3]))
 
@@ -460,10 +460,10 @@ performance <- getTrainPerf(knn.model.ud)
 model_results <- rbind(model_results
                         ,data.frame(Model = 'kNN'
                         ,Data = 'Full'
-                        ,ROC = performance[,1]
                         ,Accuracy = knn.cm.ud$overall[1]
                         ,Kappa = knn.cm.ud$overall[2]
                         ,F1 = knn.cm.ud$byClass[7]
+                        ,ROC = performance[,1]
                         ,Sensitivity = performance[,2]
                         ,Specificity = performance[,3]))
 
@@ -485,10 +485,10 @@ performance <- getTrainPerf(knn.model.md)
 model_results <- rbind(model_results
                         ,data.frame(Model = 'kNN'
                         ,Data = 'RFE Selection'
-                        ,ROC = performance[,1]
                         ,Accuracy = knn.cm.md$overall[1]
                         ,Kappa = knn.cm.md$overall[2]
                         ,F1 = knn.cm.md$byClass[7]
+                        ,ROC = performance[,1]
                         ,Sensitivity = performance[,2]
                         ,Specificity = performance[,3]))
 
@@ -510,10 +510,10 @@ performance <- getTrainPerf(knn.model.lc)
 model_results <- rbind(model_results
                         ,data.frame(Model = 'kNN'
                         ,Data = 'Low Correlation'
-                        ,ROC = performance[,1]
                         ,Accuracy = knn.cm.lc$overall[1]
                         ,Kappa = knn.cm.lc$overall[2]
                         ,F1 = knn.cm.lc$byClass[7]
+                        ,ROC = performance[,1]
                         ,Sensitivity = performance[,2]
                         ,Specificity = performance[,3]))
 
@@ -524,7 +524,9 @@ stopCluster(cluster)
 registerDoSEQ()
 
 knn.ROC <- roc(knn.model.md$pred$obs, knn.model.md$pred$Normal)
-plot(knn.ROC, col = 'blue', main = paste('SVM - Area under the curve (AUC):', round(auc(knn.ROC),2)))
+plot(knn.ROC, col = 'blue', main = paste('kNN - Area under the curve (AUC):', round(auc(knn.ROC),2)))
+
+plot(knn.model.md)
 
 # Save models in case we want to review them later
 saveRDS(model_results, "final_results.rds")
@@ -536,7 +538,9 @@ saveRDS(knn.model.lc, "Models/knn_use_data_lc.rds")
 # Naive Bayes- LOOCV Caret
 ###############################################################################
 
-train_data <- use_data
+# Enable parallel processing and reserve resources
+cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
+registerDoParallel(cluster)
 
 # Set up training conditions - must use LOOCV
 fitControl <- trainControl(method = "LOOCV"
@@ -544,39 +548,89 @@ fitControl <- trainControl(method = "LOOCV"
                            ,summaryFunction = twoClassSummary
                            ,savePredictions = 'final')
 
-# Third model is a k-Nearest Neighbor
+# Full data set
 set.seed(1234)
-nb.model <- caret::train(Label2 ~ .
-                         ,data = train_data 
+nb.model.ud <- caret::train(Label ~ .
+                         ,data = use_data 
                          ,method = "nb"
                          ,trControl = fitControl
                          ,metric = "ROC")
 
 # Get the confusion matrix
-nb.cm <- caret::confusionMatrix(nb.model$pred$pred, nb.model$pred$obs, mode = "everything")
+nb.cm.ud <- caret::confusionMatrix(nb.model.ud$pred$pred, nb.model.ud$pred$obs, mode = "everything")
 
 # Get the performance metrics from the model and save for comparison
-performance <- getTrainPerf(nb.model)
-nb_results <- data.frame("Model" = "Naive Bayes"
-                         ,"Data" = "model_data"
-                         ,"ROC" = performance[,1]
-                         ,"Accuracy" = nb.cm$overall[1]
-                         ,"Kappa" = nb.cm$overall[2]
-                         ,"Sensitivity" = performance[,2]
-                         ,"Specificity" = performance[,3])
+performance <- getTrainPerf(nb.model.ud)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'Naive Bayes'
+                        ,Data = 'Full'
+                        ,Accuracy = nb.cm.ud$overall[1]
+                        ,Kappa = nb.cm.ud$overall[2]
+                        ,F1 = nb.cm.ud$byClass[7]
+                        ,ROC = performance[,1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
 
-nb.ROC <- roc(nb.model$pred$obs, nb.model$pred$Normal)
-plot(nb.ROC, col = "blue")
-auc(nb.ROC)
+# RFE selection data set
+set.seed(1234)
+nb.model.md <- caret::train(Label ~ .
+                            ,data = model_data 
+                            ,method = "nb"
+                            ,trControl = fitControl
+                            ,metric = "ROC")
 
-# Add model results to dataframe for comparison
-final_results <- rbind(final_results, nb_results)
+# Get the confusion matrix
+nb.cm.md <- caret::confusionMatrix(nb.model.md$pred$pred, nb.model.md$pred$obs, mode = "everything")
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(nb.model.md)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'Naive Bayes'
+                        ,Data = 'RFE Selection'
+                        ,Accuracy = nb.cm.md$overall[1]
+                        ,Kappa = nb.cm.md$overall[2]
+                        ,F1 = nb.cm.md$byClass[7]
+                        ,ROC = performance[,1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+# Low correlation data set
+set.seed(1234)
+nb.model.lc <- caret::train(Label ~ .
+                            ,data = use_data_lc
+                            ,method = "nb"
+                            ,trControl = fitControl
+                            ,metric = "ROC")
+
+# Get the confusion matrix
+nb.cm.lc <- caret::confusionMatrix(nb.model.lc$pred$pred, nb.model.lc$pred$obs, mode = "everything")
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(nb.model.lc)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'Naive Bayes'
+                        ,Data = 'Low Correlation'
+                        ,Accuracy = nb.cm.lc$overall[1]
+                        ,Kappa = nb.cm.lc$overall[2]
+                        ,F1 = nb.cm.lc$byClass[7]
+                        ,ROC = performance[,1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+rownames(model_results) <- NULL
+
+# Disable parallel processing and release resources
+stopCluster(cluster)
+registerDoSEQ()
+
+nb.ROC <- roc(nb.model.md$pred$obs, nb.model.md$pred$Normal)
+plot(nb.ROC, col = 'blue', main = paste('NB - Area under the curve (AUC):', round(auc(nb.ROC),2)))
 
 # Save models in case we want to review them later
-saveRDS(final_results, "final_results.rds")
-saveRDS(nb.model, "Models/nb_use_data.rds")
-saveRDS(nb.model, "Models/nb_use_data_lc.rds")
-saveRDS(nb.model, "Models/nb_model_data.rds")
+saveRDS(model_results, "model_results.rds")
+saveRDS(nb.model.ud, "Models/nb_use_data.rds")
+saveRDS(nb.model.md, "Models/nb_model_data.rds")
+saveRDS(nb.model.lc, "Models/nb_use_data_lc.rds")
 
 ###############################################################################
 # Random Forest - LOOCV  91.55 Acc 0.8111 Kappa
@@ -584,11 +638,9 @@ saveRDS(nb.model, "Models/nb_model_data.rds")
 # https://www.analyticsvidhya.com/blog/2016/12/practical-guide-to-implement-machine-learning-with-caret-package-in-r-with-practice-problem/
 ###############################################################################
 
-
+# Enable parallel processing and reserve resources
 cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
 registerDoParallel(cluster)
-
-train_data <- use_data_lc
 
 # Set up training conditions - must use LOOCV
 fitControl <- trainControl(method = "LOOCV"
@@ -597,41 +649,96 @@ fitControl <- trainControl(method = "LOOCV"
                            ,savePredictions = 'final'
                            ,allowParallel = TRUE)
 
-# Third model is a k-Nearest Neighbor
+# Full dat set
 set.seed(1234)
-rf.model <- caret::train(Label2 ~.
-            ,data = train_data
-            ,method = 'rf'
-            ,trControl = fitControl
-            ,metric = "ROC")
+rf.model.ud <- caret::train(Label ~.
+                            ,data = use_data
+                            ,method = 'rf'
+                            ,trControl = fitControl
+                            ,metric = "ROC")
 
+rf.cm.ud <- caret::confusionMatrix(rf.model.ud$pred$pred, rf.model.ud$pred$obs)
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(rf.model.ud)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'Random Forest'
+                        ,Data = 'Full'
+                        ,Accuracy = rf.cm.ud$overall[1]
+                        ,Kappa = rf.cm.ud$overall[2]
+                        ,F1 = rf.cm.ud$byClass[7]
+                        ,ROC = performance[,1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+# RFE selection data set
+set.seed(1234)
+rf.model.md <- caret::train(Label ~.
+                            ,data = model_data
+                            ,method = 'rf'
+                            ,trControl = fitControl
+                            ,metric = "ROC")
+
+rf.cm.md <- caret::confusionMatrix(rf.model.md$pred$pred, rf.model.md$pred$obs)
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(rf.model.md)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'Random Forest'
+                        ,Data = 'RFE Selection'
+                        ,Accuracy = rf.cm.md$overall[1]
+                        ,Kappa = rf.cm.md$overall[2]
+                        ,F1 = rf.cm.md$byClass[7]
+                        ,ROC = performance[,1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+# Low correlation data set
+set.seed(1234)
+rf.model.lc <- caret::train(Label ~.
+                            ,data = use_data_lc
+                            ,method = 'rf'
+                            ,trControl = fitControl
+                            ,metric = "ROC")
+
+rf.cm.lc <- caret::confusionMatrix(rf.model.lc$pred$pred, rf.model.lc$pred$obs)
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(rf.model.lc)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'Random Forest'
+                        ,Data = 'Low Correlation'
+                        ,Accuracy = rf.cm.lc$overall[1]
+                        ,Kappa = rf.cm.lc$overall[2]
+                        ,F1 = rf.cm.lc$byClass[7]
+                        ,ROC = performance[,1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+rownames(model_results) <- NULL
+
+# Disable parallel processing and release resources
 stopCluster(cluster)
 registerDoSEQ()
 
-rf.cm <- caret::confusionMatrix(rf.model$pred$pred, rf.model$pred$obs)
+rf.ROC <- roc(rf.model.md$pred$obs, rf.model.md$pred$Normal)
+plot(rf.ROC, col = 'blue', main = paste('RF - Area under the curve (AUC):', round(auc(rf.ROC),2)))
 
-# Get the performance metrics from the model and save for comparison
-performance <- getTrainPerf(rf.model)
-rf_results <- data.frame("Model" = "Random Forest"
-                         ,"Data" = "use_data_lc"
-                         ,"ROC" = performance[,1]
-                         ,"Accuracy" = rf.cm$overall[1]
-                         ,"Kappa" = rf.cm$overall[2]
-                         ,"Sensitivity" = performance[,2]
-                         ,"Specificity" = performance[,3])
-
-rf.ROC <- roc(rf.model$pred$obs, rf.model$pred$Normal)
-plot(rf.ROC, col = "blue")
-auc(rf.ROC)
-
-# Add model results to dataframe for comparison
-final_results <- rbind(final_results, rf_results)
+# Variable importance plot
+imp <- as.data.frame(rf.model.md$finalModel$importance)
+ggplot(imp, aes(x = reorder(rownames(imp), MeanDecreaseGini), MeanDecreaseGini)) +
+        geom_bar(stat = "identity", aes(fill = rownames(imp))) + 
+        coord_flip() + 
+        guides(fill=FALSE) + 
+        ggtitle("Random Forest Variable Importance - Hospital Type") +
+        xlab("Variables") +
+        ylab("Mean Decrease Gini")
 
 # Save models in case we want to review them later
-saveRDS(final_results, "final_results.rds")
-saveRDS(rf.model, "Models/rf_use_data.rds")
-saveRDS(rf.model, "Models/rf_use_data_lc.rds")
-saveRDS(rf.model, "Models/rf_model_data.rds")
+saveRDS(model_results, "model_results.rds")
+saveRDS(rf.model.ud, "Models/rf_use_data.rds")
+saveRDS(rf.model.md, "Models/rf_model_data.rds")
+saveRDS(rf.model.lc, "Models/rf_use_data_lc.rds")
 
 ###############################################################################
 # Nueral Network - LOOCV  
@@ -698,24 +805,8 @@ saveRDS(nnet.model, "Models/nnet_model_data.rds")
 
 
 
-saveRDS(rf, "random_forest.rds")
-varImp(rf)
-#varImpPlot(rf$finalModel)
-
-imp <- as.data.frame(rf$finalModel$importance)
-
-ggplot(imp, aes(x = reorder(rownames(imp), MeanDecreaseGini), MeanDecreaseGini)) +
-        geom_bar(stat = "identity", aes(fill = rownames(imp))) + 
-        coord_flip() + 
-        guides(fill=FALSE) + 
-        ggtitle("Random Forest Variable Importance - Hospital Type") +
-        xlab("Variables") +
-        ylab("Mean Decrease Gini")
 
 
-rf_pred_test <- predict(rf, testData)
-
-confusionMatrix(rf_pred_test, testData$Label2)
 
 
 
@@ -840,18 +931,6 @@ for(row in 1:20) {
 
 # noticed in the data that not all quadrants have values for each patient
 
-# Verify that all labels for patients are the same
-checkLabel <- full %>%
-        group_by(PatientNumMasked) %>%
-        mutate(minLabel = min(Label)) %>%
-        mutate(maxLabel = max(Label)) %>%
-        mutate(count = length(PatientNumMasked)) %>%
-        select(PatientNumMasked, minLabel, maxLabel, count) 
-
-# If the min and max are equal, they will be dropped.  If list is empty
-# then the label is consistent across data sets for all patients
-checkLabel %>%
-        filter(minLabel != maxLabel)
 
 
 
@@ -859,27 +938,7 @@ checkLabel %>%
 
 
 
-lung_segment <- c('Right Upper', 'Right Middle', 'Right Lower', 'Left Upper', 'Left Middle', 'Left Lower', 'Total')
-observations <- c(397, 470, 446, 392, 467, 434, 2606)
-data_table <- data.frame(lung_segment, observations)
 
-length(unique(full$PatientNumMasked))
-library(e1071)
-svm <- svm(Label2 ~., use_data)
-confusionMatrix(predict(svm, use_data), use_data$Label2)
-
-svm.results <- matrix(NA, nrow = dim(use_data)[1], ncol = 2)
-for(row in 1:dim(use_data[1])) {
-        svmFit <- randomForest(Label2 ~ ., data = use_data[-row,])
-        svmFit.response <- predict(svmFit, use_data[row,], type = "response")
-        svm.results[row,] <- c(row, svmFit.response)
-}
-
-svm.pred <- rep("Abnormal", dim(use_data)[1])
-svm.pred[svm.results[,2] == 2] = "Normal"
-svm.finalResults <- as.data.frame(cbind(svm.results, full$PatientNumMasked, svm.pred, full$Label2))
-
-confusionMatrix(svm.finalResults$svm.pred, svm.finalResults$V5)
 
 
 

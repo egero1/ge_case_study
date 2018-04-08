@@ -72,7 +72,6 @@ options(width = 400, kableExtra.latex.load_packages = FALSE, knitr.table.format 
 
 \FloatBarrier
 
-
 \newpage
 
 \appendix \section{Appendices}

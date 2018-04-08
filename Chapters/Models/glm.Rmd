@@ -1,0 +1,128 @@
+\subsection{Generalized Linear Model} 
+
+Generalized Linear Models are an extension of linear regression that allow for the response variable to have a non-normal distribution. Having a binary response variable, the relationship between the predictors and the response variable is not linear, so the logit link function,$$logit(p) =log\frac{p}{1-p}$$ is used to provide a transformation to ensure that the response is constrained between 0 and 1.
+
+```{r glm, echo = FALSE}
+
+# Create a data frame to hold the results
+model_results <- data.frame(Model = character()
+                             ,Data = character()
+                             ,Accuracy = numeric()
+                             ,Kappa = numeric()
+                             ,F1 = numeric()
+                             ,ROC = numeric()
+                             ,Sensitivity = numeric()
+                             ,Specificity = numeric())
+```
+
+```{r glm_models, echo = FALSE}
+###############################################################################
+# Generalized Linear Models
+###############################################################################
+
+# Enable parallel processing and reserve resources
+cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
+registerDoParallel(cluster)
+
+# Set up training conditions - must use LOOCV
+fitControl <- trainControl(method = "LOOCV"
+                           ,classProbs = TRUE 
+                           ,summaryFunction = twoClassSummary
+                           ,savePredictions = 'final')
+
+# Full data set
+set.seed(1234)
+glm.model.ud <- caret::train(Label ~.
+                          ,data = use_data
+                          ,family = 'binomial'
+                          ,method = 'glm'
+                          ,trControl = fitControl
+                          ,metric = "ROC")
+
+# Get the confusion matrix
+glm.cm.ud <- caret::confusionMatrix(glm.model.ud$pred$pred, glm.model.ud$pred$obs, mode = "everything")
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(glm.model.ud)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'GLM'
+                        ,Data = 'Full'
+                        ,Accuracy = glm.cm.ud$overall[1]
+                        ,Kappa = glm.cm.ud$overall[2]
+                        ,F1 = glm.cm.ud$byClass[7]
+                        ,ROC = performance[,1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+# RFE selection data set
+set.seed(1234)
+glm.model.md <- caret::train(Label ~.
+                          ,data = model_data
+                          ,family = 'binomial'
+                          ,method = 'glm'
+                          ,trControl = fitControl
+                          ,metric = "ROC")
+
+# Get the confusion matrix
+glm.cm.md <- caret::confusionMatrix(glm.model.md$pred$pred, glm.model.md$pred$obs, mode = "everything")
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(glm.model.md)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'GLM'
+                        ,Data = 'RFE Selection'
+                        ,Accuracy = glm.cm.md$overall[1]
+                        ,Kappa = glm.cm.md$overall[2]
+                        ,F1 = glm.cm.md$byClass[7]
+                        ,ROC = performance[,1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+# Low correlation data set
+set.seed(1234)
+glm.model.lc <- caret::train(Label ~.
+                          ,data = use_data_lc
+                          ,family = 'binomial'
+                          ,method = 'glm'
+                          ,trControl = fitControl
+                          ,metric = "ROC")
+
+# Get the confusion matrix
+glm.cm.lc <- caret::confusionMatrix(glm.model.lc$pred$pred, glm.model.lc$pred$obs, mode = "everything")
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(glm.model.lc)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'GLM'
+                        ,Data = 'Low Correlation'
+                        ,Accuracy = glm.cm.lc$overall[1]
+                        ,Kappa = glm.cm.lc$overall[2]
+                        ,F1 = glm.cm.lc$byClass[7]
+                        ,ROC = performance[,1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+rownames(model_results) <- NULL
+
+# Disable parallel processing and release resources
+stopCluster(cluster)
+registerDoSEQ()
+
+```
+
+```{r glm_roc, echo = FALSE}
+
+kable(model_results, caption = "Model Results", booktabs = TRUE) %>% 
+        kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
+
+glm.ROC <- roc(glm.model.ud$pred$obs, glm.model.ud$pred$Normal)
+plot(glm.ROC, col = 'blue', main = paste('GLM - Area under the curve (AUC):', round(auc(glm.ROC),2)))
+
+# Print model coefficients
+coefficients <- as.data.frame(glm.model.ud$finalModel$coefficients)
+
+kable(coefficients, caption = "GLM Model Coefficients", booktabs = TRUE) %>% 
+        kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
+
+```
+

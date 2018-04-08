@@ -1,0 +1,112 @@
+\subsection{Random Forest Models}
+
+```{r rf_models, echo = FALSE}
+
+# Enable parallel processing and reserve resources
+cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
+registerDoParallel(cluster)
+
+# Set up training conditions - must use LOOCV
+fitControl <- trainControl(method = "LOOCV"
+                           ,classProbs = TRUE 
+                           ,summaryFunction = twoClassSummary
+                           ,savePredictions = 'final'
+                           ,allowParallel = TRUE)
+
+# Full dat set
+set.seed(1234)
+rf.model.ud <- caret::train(Label ~.
+            ,data = use_data
+            ,method = 'rf'
+            ,trControl = fitControl
+            ,metric = "ROC")
+
+rf.cm.ud <- caret::confusionMatrix(rf.model.ud$pred$pred, rf.model.ud$pred$obs)
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(rf.model.ud)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'Random Forest'
+                        ,Data = 'Full'
+                        ,Accuracy = rf.cm.ud$overall[1]
+                        ,Kappa = rf.cm.ud$overall[2]
+                        ,F1 = rf.cm.ud$byClass[7]
+                        ,ROC = performance[,1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+# RFE selection data set
+set.seed(1234)
+rf.model.md <- caret::train(Label ~.
+                            ,data = model_data
+                            ,method = 'rf'
+                            ,trControl = fitControl
+                            ,metric = "ROC")
+
+rf.cm.md <- caret::confusionMatrix(rf.model.md$pred$pred, rf.model.md$pred$obs)
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(rf.model.md)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'Random Forest'
+                        ,Data = 'RFE Selection'
+                        ,Accuracy = rf.cm.md$overall[1]
+                        ,Kappa = rf.cm.md$overall[2]
+                        ,F1 = rf.cm.md$byClass[7]
+                        ,ROC = performance[,1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+# Low correlation data set
+set.seed(1234)
+rf.model.lc <- caret::train(Label ~.
+                            ,data = use_data_lc
+                            ,method = 'rf'
+                            ,trControl = fitControl
+                            ,metric = "ROC")
+
+rf.cm.lc <- caret::confusionMatrix(rf.model.lc$pred$pred, rf.model.lc$pred$obs)
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(rf.model.lc)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'Random Forest'
+                        ,Data = 'Low Correlation'
+                        ,Accuracy = rf.cm.lc$overall[1]
+                        ,Kappa = rf.cm.lc$overall[2]
+                        ,F1 = rf.cm.lc$byClass[7]
+                        ,ROC = performance[,1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+rownames(model_results) <- NULL
+
+# Disable parallel processing and release resources
+stopCluster(cluster)
+registerDoSEQ()
+
+```
+
+```{r rf_roc, echo = FALSE}
+
+kable(model_results, caption = "Model Results", booktabs = TRUE) %>% 
+        kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
+
+rf.ROC <- roc(rf.model.lc$pred$obs, knn.model.lc$pred$Normal)
+plot(rf.ROC, col = 'blue', main = paste('RF - Area under the curve (AUC):', round(auc(rf.ROC),2)))
+
+```
+
+```{r rf_varimp, echo = FALSE}
+
+# Variable importance plot
+imp <- as.data.frame(rf.model.md$finalModel$importance)
+ggplot(imp, aes(x = reorder(rownames(imp), MeanDecreaseGini), MeanDecreaseGini)) +
+        geom_bar(stat = "identity", aes(fill = rownames(imp))) + 
+        coord_flip() + 
+        guides(fill=FALSE) + 
+        ggtitle("Random Forest - Variable Importance") +
+        xlab("Variables") +
+        ylab("Mean Decrease Gini")
+
+```

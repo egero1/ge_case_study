@@ -1,0 +1,100 @@
+\subsection{Naive Bayesian Models} 
+
+```{r nb_models, echo = FALSE}
+
+# Enable parallel processing and reserve resources
+cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
+registerDoParallel(cluster)
+
+# Set up training conditions - must use LOOCV
+fitControl <- trainControl(method = "LOOCV"
+                           ,classProbs = TRUE 
+                           ,summaryFunction = twoClassSummary
+                           ,savePredictions = 'final')
+
+# Full data set
+set.seed(1234)
+nb.model.ud <- caret::train(Label ~ .
+                         ,data = use_data 
+                         ,method = "nb"
+                         ,trControl = fitControl
+                         ,metric = "ROC")
+
+# Get the confusion matrix
+nb.cm.ud <- caret::confusionMatrix(nb.model.ud$pred$pred, nb.model.ud$pred$obs, mode = "everything")
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(nb.model.ud)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'Naive Bayes'
+                        ,Data = 'Full'
+                        ,Accuracy = nb.cm.ud$overall[1]
+                        ,Kappa = nb.cm.ud$overall[2]
+                        ,F1 = nb.cm.ud$byClass[7]
+                        ,ROC = performance[,1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+# RFE selection data set
+set.seed(1234)
+nb.model.md <- caret::train(Label ~ .
+                            ,data = model_data 
+                            ,method = "nb"
+                            ,trControl = fitControl
+                            ,metric = "ROC")
+
+# Get the confusion matrix
+nb.cm.md <- caret::confusionMatrix(nb.model.md$pred$pred, nb.model.md$pred$obs, mode = "everything")
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(nb.model.md)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'Naive Bayes'
+                        ,Data = 'RFE Selection'
+                        ,Accuracy = nb.cm.md$overall[1]
+                        ,Kappa = nb.cm.md$overall[2]
+                        ,F1 = nb.cm.md$byClass[7]
+                        ,ROC = performance[,1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+# Low correlation data set
+set.seed(1234)
+nb.model.lc <- caret::train(Label ~ .
+                            ,data = use_data_lc
+                            ,method = "nb"
+                            ,trControl = fitControl
+                            ,metric = "ROC")
+
+# Get the confusion matrix
+nb.cm.lc <- caret::confusionMatrix(nb.model.lc$pred$pred, nb.model.lc$pred$obs, mode = "everything")
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(nb.model.lc)
+model_results <- rbind(model_results
+                        ,data.frame(Model = 'Naive Bayes'
+                        ,Data = 'Low Correlation'
+                        ,Accuracy = nb.cm.lc$overall[1]
+                        ,Kappa = nb.cm.lc$overall[2]
+                        ,F1 = nb.cm.lc$byClass[7]
+                        ,ROC = performance[,1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]))
+
+rownames(model_results) <- NULL
+
+# Disable parallel processing and release resources
+stopCluster(cluster)
+registerDoSEQ()
+
+```
+
+```{r nb_roc, echo = FALSE}
+
+kable(model_results, caption = "Model Results", booktabs = TRUE) %>% 
+        kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
+
+nb.ROC <- roc(nb.model.md$pred$obs, nb.model.md$pred$Normal)
+plot(nb.ROC, col = 'blue', main = paste('NB - Area under the curve (AUC):', round(auc(nb.ROC),2)))
+
+```
