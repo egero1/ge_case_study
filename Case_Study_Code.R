@@ -526,7 +526,7 @@ registerDoSEQ()
 knn.ROC <- roc(knn.model.md$pred$obs, knn.model.md$pred$Normal)
 plot(knn.ROC, col = 'blue', main = paste('kNN - Area under the curve (AUC):', round(auc(knn.ROC),2)))
 
-plot(knn.model.md)
+plot(knn.model.md, main = paste('k = ', knn.model.md$bestTune))
 
 # Save models in case we want to review them later
 saveRDS(model_results, "model_results.rds")

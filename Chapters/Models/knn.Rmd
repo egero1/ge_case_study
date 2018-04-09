@@ -126,6 +126,7 @@ plot(knn.ROC, col = 'blue', main = paste('kNN - Area under the curve (AUC):', ro
 
 ```{r knn_plot, echo = FALSE}
 
-plot(knn.model.md)
+plot(knn.model.md, main = paste('k = ', knn.model.md$bestTune))
+
 
 ```
