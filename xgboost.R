@@ -28,17 +28,15 @@ ll$Position <- "Left Lower"
 # Combine all sections into one dataframe
 full <- rbind(ru, rm, rl, lu, lm, ll)
 
-# Set levels of the factor - makes it easier to read
-full$Label2 <- ifelse(full$Label == 0, 'Normal', 'Abnormal')
-
 # Prepare data set
+# Set levels of the factor - makes it easier to read
 use_data <- full %>%
-        mutate(Label2 = factor(Label2)) %>%
+        mutate(Label = factor(recode(Label, '0' = 'Normal', '1' = 'Abnormal'))) %>%
         mutate(Position = factor(Position)) %>% 
-        dplyr::select(-PatientNumMasked, -Label)
+        dplyr::select(-PatientNumMasked)
 
 # Create training and test datasets
-trainIndex <- createDataPartition(use_data$Label2, p = 0.7, list = FALSE)
+trainIndex <- createDataPartition(use_data$Label, p = 0.7, list = FALSE)
 trainData <- use_data[trainIndex,]
 testData <- use_data[-trainIndex,]
 
@@ -50,12 +48,12 @@ setDT(trainData)
 setDT(testData)
 
 # using one hot encoding
-labels_all <- all_data$Label2
-labels <- trainData$Label2
-ts_label <- testData$Label2
-new_all <- model.matrix(~.+0, data = all_data[,-c("Label2"), with = F]) 
-new_tr <- model.matrix(~.+0, data = trainData[,-c("Label2"), with = F]) 
-new_ts <- model.matrix(~.+0, data = testData[,-c("Label2"), with = F])
+labels_all <- all_data$Label
+labels <- trainData$Label
+ts_label <- testData$Label
+new_all <- model.matrix(~.+0, data = all_data[,-c("Label"), with = F]) 
+new_tr <- model.matrix(~.+0, data = trainData[,-c("Label"), with = F]) 
+new_ts <- model.matrix(~.+0, data = testData[,-c("Label"), with = F])
 
 # convert factor to numeric
 labels_all <- as.numeric(labels_all) - 1
@@ -68,7 +66,7 @@ dtrain <- xgb.DMatrix(data = new_tr, label = labels)
 dtest <- xgb.DMatrix(data = new_ts, label = ts_label)
 
 ###############################################################################################
-## XGradient Boost Models - Hospital Type classification
+## XGradient Boost Models 
 ###############################################################################################
 
 params <- list(booster = "gbtree"
@@ -79,33 +77,30 @@ params <- list(booster = "gbtree"
                ,max_depth = 6
                ,min_child_weight = 1
                ,subsample = 1
-               ,colsample_bytree = 1
-)
+               ,colsample_bytree = 1)
 
 xgbcv <- xgb.cv(params = params
                 ,data = dtrain
                 ,nrounds = 200
-                ,nfold = 5
+                ,nfold = 10
                 ,showsd = TRUE
                 ,stratified = TRUE
                 ,print_every_n = 10
                 ,early_stopping_rounds = 20
                 ,maximize = FALSE
-                ,eval_metric = "mlogloss"
-)
+                ,eval_metric = "mlogloss")
 
 xgbcv$best_iteration
 
 # first default - model training
 xgb_ht <- xgb.train (params = params
                      ,data = dtrain
-                     ,nrounds = 37
+                     ,nrounds = 63
                      ,watchlist = list(val = dtest, train = dtrain)
                      ,print_every_n = 10
                      ,early_stopping_rounds = 10
                      ,maximize = F 
-                     ,eval_metric = "mlogloss"
-)
+                     ,eval_metric = "mlogloss")
 
 # model prediction
 xgbpred_ht <- predict(xgb_ht, dtest)
@@ -113,7 +108,7 @@ xgbpred_ht <- predict(xgb_ht, dtest)
 
 # confusion matrix
 xgbcm_ht <- caret::confusionMatrix(xgbpred_ht, ts_label, mode = 'everything')
-#Accuracy - 99.17% Kappa - 0.9852
+#Accuracy - 95.13% Kappa - 0.8942
 
 # save models and results
 saveRDS(xgb_ht, "xgb_ht.rds")
@@ -123,7 +118,6 @@ xgb_htt <- readRDS("xgb_ht.rds")
 library(ggplot)
 # view variable importance plot
 mat <- xgb.importance (feature_names = colnames(new_tr), model = xgb_ht)
-xgb.plot.importance (importance_matrix = mat[1:20], main = "XGBoost Model Variable Importance - Label") 
 
 ggplot(mat[1:10], aes(x = reorder(Feature, Gain), Gain)) +
         geom_bar(stat = "identity", aes(fill = Feature)) + 
@@ -133,15 +127,13 @@ ggplot(mat[1:10], aes(x = reorder(Feature, Gain), Gain)) +
         xlab("Variables") +
         ylab("")
 
-## predict on full data set for use in mobile app
+## predict on full data set 
 # get results for full data set
 # model prediction
 xgb_pred_ht_all <- predict(xgb_ht, adata)
 
 # confusion matrix
 xgb_cm_ht_all <- caret::confusionMatrix(xgb_pred_ht_all, labels_all, mode = 'everything')
-#Accuracy - 98 Kappa - 0.9566
-
 
 # Convert predictions to hospital
 xgb_pred_ht_all <- as.factor(xgb_pred_ht_all)
@@ -152,18 +144,3 @@ xgb_pred_ht_all <- factor(xgb_pred_ht_all,
 p <- xgb.plot.multi.trees(model = xgb_ht, 
                           features_keep = 3)
 print(p)
-
-
-
-
-
-################
-
-param <- list("objective" = "multi:softprob",
-              "eval_metric" = "mlogloss",
-              "num_class" = 12)
-cv.nround <- 11
-cv.nfold <- 5
-mdcv <-xgb.cv(data=dtrain,params = param,nthread=6,nfold = cv.nfold,nrounds = cv.nround,verbose = T)
-
-md <-xgb.train(data=dtrain,params = param,nround = 80,watchlist = list(train=dtrain,test=dtest),nthread=6)

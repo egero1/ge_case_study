@@ -832,3 +832,114 @@ saveRDS(model_results, "model_results.rds")
 saveRDS(nnet.model, "Models/nnet_use_data.rds")
 saveRDS(nnet.model, "Models/nnet_use_data_lc.rds")
 saveRDS(nnet.model, "Models/nnet_model_data.rds")
+
+
+###############################################################################
+# XGBoost - LOOCV  
+# https://machinelearningmastery.com/tune-machine-learning-algorithms-in-r/
+# https://www.analyticsvidhya.com/blog/2016/12/practical-guide-to-implement-machine-learning-with-caret-package-in-r-with-practice-problem/
+###############################################################################
+
+# Enable parallel processing and reserve resources
+cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
+registerDoParallel(cluster)
+
+# Set up training conditions - must use LOOCV
+fitControl <- trainControl(method = "LOOCV"
+                           ,classProbs = TRUE 
+                           ,summaryFunction = twoClassSummary
+                           ,savePredictions = 'final'
+                           ,allowParallel = TRUE
+                           ,verboseIter = TRUE)
+
+# set up the cross-validated hyper-parameter search
+xgb_grid = expand.grid(nrounds = 2
+                       ,max_depth = c(5, 10, 15)
+                       ,eta = c(0.01, 0.001, 0.0001)
+                       ,gamma = c(1, 2, 3)
+                       ,colsample_bytree = c(0.4, 0.7, 1.0)
+                       ,min_child_weight = c(0.5, 1, 1.5)
+                       ,subsample = 1)
+
+# Full data set
+set.seed(1234)
+xgb.model.ud <- caret::train(Label ~.
+                              ,data = use_data
+                              ,method = 'xgbTree'
+                              ,trControl = fitControl
+                              ,tuneGrid = xgb_grid
+                              ,metric = "ROC")
+
+xgb.cm.ud <- caret::confusionMatrix(xgb.model.ud$pred$pred, xgb.model.ud$pred$obs)
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(nnet.model.ud)
+model_results <- rbind(model_results
+                       ,data.frame(Model = 'Neural Network'
+                                   ,Data = 'Full'
+                                   ,Accuracy = nnet.cm.ud$overall[1]
+                                   ,Kappa = nnet.cm.ud$overall[2]
+                                   ,F1 = nnet.cm.ud$byClass[7]
+                                   ,ROC = performance[,1]
+                                   ,Sensitivity = performance[,2]
+                                   ,Specificity = performance[,3]))
+
+rownames(model_results) <- NULL
+###########################################################################
+# Set up training conditions - must use LOOCV
+fitControl <- trainControl(method = "repeatedcv"
+                           ,number = 10
+                           ,repeats = 5
+                           ,classProbs = TRUE 
+                           ,summaryFunction = twoClassSummary
+                           ,savePredictions = 'final'
+                           ,allowParallel = TRUE
+                           ,verboseIter = TRUE)
+
+# set up the cross-validated hyper-parameter search
+xgb_grid = expand.grid(nrounds = 2
+                       ,max_depth = c(5, 10, 15)
+                       ,eta = c(0.01, 0.001, 0.0001)
+                       ,gamma = c(1, 2, 3)
+                       ,colsample_bytree = c(0.4, 0.7, 1.0)
+                       ,min_child_weight = c(0.5, 1, 1.5)
+                       ,subsample = 1)
+
+# Full data set
+set.seed(1234)
+xgb.model.ud.cv <- caret::train(Label ~.
+                             ,data = trainData
+                             ,method = 'xgbTree'
+                             ,trControl = fitControl
+                             ,tuneGrid = xgb_grid
+                             ,metric = "ROC")
+
+xgb.cm.ud.cv <- caret::confusionMatrix(xgb.model.ud.cv$pred$pred, xgb.model.ud.cv$pred$obs)
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(nnet.model.cv)
+model_results <- rbind(model_results
+                       ,data.frame(Model = 'Neural Network'
+                                   ,Data = 'Full'
+                                   ,Accuracy = nnet.cm.cv$overall[1]
+                                   ,Kappa = nnet.cm.cv$overall[2]
+                                   ,F1 = nnet.cm.cv$byClass[7]
+                                   ,ROC = performance[,1]
+                                   ,Sensitivity = performance[,2]
+                                   ,Specificity = performance[,3]))
+
+rownames(model_results) <- NULL
+
+# Disable parallel processing and release resources
+stopCluster(cluster)
+registerDoSEQ()
+
+nnet.ROC <- roc(nnet.model$pred$obs, nnet.model$pred$Normal)
+plot(nnet.ROC, col = "blue")
+auc(nnet.ROC)
+
+# Save models in case we want to review them later
+saveRDS(model_results, "model_results.rds")
+saveRDS(nnet.model, "Models/nnet_use_data.rds")
+saveRDS(nnet.model, "Models/nnet_use_data_lc.rds")
+saveRDS(nnet.model, "Models/nnet_model_data.rds")
