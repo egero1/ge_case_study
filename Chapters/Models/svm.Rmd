@@ -24,11 +24,13 @@ impVars <- train(Label ~ .,
 
 ```{r svm_bound_plot, echo = FALSE, out.width = '350px', fig.cap = 'Decision Boundaries', fig.align = "center", fig.pos = 'H'}
 
-decisionplot <- function(model, data, class = NULL, predict_type = "class",
+decisionplot <- function(model, data1, data2, class = NULL, predict_type = "class",
                          resolution = 100, showgrid = TRUE, ...) {
         
-        if(!is.null(class)) cl <- data[,class] else cl <- 1
-        data <- data[,1:2]
+       # if(!is.null(class)) cl <- data[,class] else cl <- 1
+        cl <- class
+        data <- data.frame(data1, data2)
+        #data <- data[, 1:2]
         k <- length(unique(cl))
         
         plot(data, col = as.integer(cl)+1L, pch = as.integer(cl)+1L, ...)
@@ -58,7 +60,7 @@ decisionplot <- function(model, data, class = NULL, predict_type = "class",
         invisible(z)
 }
 
-decisionplot(model = impVars, data = vars, class = "Label", main = "SVM: Important Variables", predict_type = "raw")
+decisionplot(model = impVars, data1 = model_data['Hist_2_150_2_Entropy'], data2 = vars[,2], class = "Label", main = "SVM: Important Variables", predict_type = "raw")
 
 ```
 
