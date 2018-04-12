@@ -4,13 +4,14 @@
 
 # Create a data frame to hold the results
 rf_results <- data.frame(Model = character()
-                             ,Data = character()
-                             ,Accuracy = numeric()
-                             ,Kappa = numeric()
-                             ,F1 = numeric()
-                             ,ROC = numeric()
-                             ,Sensitivity = numeric()
-                             ,Specificity = numeric())
+                          ,Data = character()
+                          ,Accuracy = numeric()
+                          ,Sensitivity = numeric()
+                          ,Specificity = numeric()
+                          ,Precision = numeric()
+                          ,Kappa = numeric()
+                          ,F1 = numeric()
+                          ,ROC = numeric())
 ```
 
 ```{r rf_models, echo = FALSE}
@@ -44,11 +45,12 @@ rf_results <- rbind(rf_results
                         ,data.frame(Model = 'Random Forest'
                         ,Data = 'Full'
                         ,Accuracy = rf.cm.ud$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Precision = rf.cm.ud$byClass[5]
                         ,Kappa = rf.cm.ud$overall[2]
                         ,F1 = rf.cm.ud$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ,ROC = performance[,1]))
 
 # RFE selection data set
 #set.seed(1234)
@@ -68,11 +70,12 @@ rf_results <- rbind(rf_results
                         ,data.frame(Model = 'Random Forest'
                         ,Data = 'RFE Selection'
                         ,Accuracy = rf.cm.md$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Precision = rf.cm.md$byClass[5]
                         ,Kappa = rf.cm.md$overall[2]
                         ,F1 = rf.cm.md$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ,ROC = performance[,1]))
 
 # Low correlation data set
 #set.seed(1234)
@@ -92,11 +95,12 @@ rf_results <- rbind(rf_results
                         ,data.frame(Model = 'Random Forest'
                         ,Data = 'Low Correlation'
                         ,Accuracy = rf.cm.lc$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Precision = rf.cm.lc$byClass[5]
                         ,Kappa = rf.cm.lc$overall[2]
                         ,F1 = rf.cm.lc$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ,ROC = performance[,1]))
 
 rownames(rf_results) <- NULL
 

@@ -248,11 +248,12 @@ colnames(common_predictors) <- "Common Predictors"
 model_results <- data.frame(Model = character()
                           ,Data = character()
                           ,Accuracy = numeric()
+                          ,Sensitivity = numeric()
+                          ,Specificity = numeric()
+                          ,Precision = numeric()
                           ,Kappa = numeric()
                           ,F1 = numeric()
-                          ,ROC = numeric()
-                          ,Sensitivity = numeric()
-                          ,Specificity = numeric())
+                          ,ROC = numeric())
 
 ###############################################################################
 # GLM - LOOCV
@@ -289,11 +290,12 @@ model_results <- rbind(model_results
                         ,data.frame(Model = 'GLM'
                         ,Data = 'Full'
                         ,Accuracy = glm.cm.ud$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Precision = glm.cm.ud$byClass[5]
                         ,Kappa = glm.cm.ud$overall[2]
                         ,F1 = glm.cm.ud$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ,ROC = performance[,1]))
 
 # RFE selection data set
 set.seed(1234)
@@ -313,11 +315,12 @@ model_results <- rbind(model_results
                         ,data.frame(Model = 'GLM'
                         ,Data = 'RFE Selection'
                         ,Accuracy = glm.cm.md$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Precision = glm.cm.md$byClass[5]
                         ,Kappa = glm.cm.md$overall[2]
                         ,F1 = glm.cm.md$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ,ROC = performance[,1]))
 
 # Low correlation data set
 set.seed(1234)
@@ -337,11 +340,12 @@ model_results <- rbind(model_results
                         ,data.frame(Model = 'GLM'
                         ,Data = 'Low Correlation'
                         ,Accuracy = glm.cm.lc$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Precision = glm.cm.lc$byClass[5]
                         ,Kappa = glm.cm.lc$overall[2]
                         ,F1 = glm.cm.lc$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ,ROC = performance[,1]))
 
 rownames(model_results) <- NULL
 
@@ -395,11 +399,12 @@ model_results <- rbind(model_results
                         ,data.frame(Model = 'SVM'
                         ,Data = 'Full'
                         ,Accuracy = svm.cm.ud$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Precision = svm.cm.ud$byClass[5]
                         ,Kappa = svm.cm.ud$overall[2]
                         ,F1 = svm.cm.ud$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ,ROC = performance[,1]))
 
 # RFE selection data set
 set.seed(1234)
@@ -418,11 +423,12 @@ model_results <- rbind(model_results
                         ,data.frame(Model = 'SVM'
                         ,Data = 'RFE Selection'
                         ,Accuracy = svm.cm.md$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Presicion = svm.cm.md$byClass[5]
                         ,Kappa = svm.cm.md$overall[2]
                         ,F1 = svm.cm.md$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ,ROC = performance[,1]))
 
 # Low correlation data set
 set.seed(1234)
@@ -441,11 +447,12 @@ model_results <- rbind(model_results
                         ,data.frame(Model = 'SVM'
                         ,Data = 'Low Correlation'
                         ,Accuracy = svm.cm.lc$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Presicion = svm.cm.lc$byClass[5]
                         ,Kappa = svm.cm.lc$overall[2]
                         ,F1 = svm.cm.lc$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ,ROC = performance[,1]))
 
 rownames(model_results) <- NULL
 
@@ -495,11 +502,12 @@ model_results <- rbind(model_results
                         ,data.frame(Model = 'kNN'
                         ,Data = 'Full'
                         ,Accuracy = knn.cm.ud$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Presicion = knn.cm.ud$byClass[5]
                         ,Kappa = knn.cm.ud$overall[2]
                         ,F1 = knn.cm.ud$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ,ROC = performance[,1]))
 
 # RFE selection data set
 set.seed(1234)
@@ -520,11 +528,12 @@ model_results <- rbind(model_results
                         ,data.frame(Model = 'kNN'
                         ,Data = 'RFE Selection'
                         ,Accuracy = knn.cm.md$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Presicion = knn.cm.md$byClass[5]
                         ,Kappa = knn.cm.md$overall[2]
                         ,F1 = knn.cm.md$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ,ROC = performance[,1]))
 
 # Low correlation data set
 set.seed(1234)
@@ -545,11 +554,12 @@ model_results <- rbind(model_results
                         ,data.frame(Model = 'kNN'
                         ,Data = 'Low Correlation'
                         ,Accuracy = knn.cm.lc$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Presicion = knn.cm.lc$byClass[5]
                         ,Kappa = knn.cm.lc$overall[2]
                         ,F1 = knn.cm.lc$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ,ROC = performance[,1]))
 
 rownames(model_results) <- NULL
 
@@ -599,11 +609,12 @@ model_results <- rbind(model_results
                         ,data.frame(Model = 'Naive Bayes'
                         ,Data = 'Full'
                         ,Accuracy = nb.cm.ud$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Presicion = nb.cm.ud$byClass[5]
                         ,Kappa = nb.cm.ud$overall[2]
                         ,F1 = nb.cm.ud$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ,ROC = performance[,1]))
 
 # RFE selection data set
 set.seed(1234)
@@ -622,11 +633,12 @@ model_results <- rbind(model_results
                         ,data.frame(Model = 'Naive Bayes'
                         ,Data = 'RFE Selection'
                         ,Accuracy = nb.cm.md$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Presicion = nb.cm.md$byClass[5]
                         ,Kappa = nb.cm.md$overall[2]
                         ,F1 = nb.cm.md$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ,ROC = performance[,1]))
 
 # Low correlation data set
 set.seed(1234)
@@ -645,11 +657,12 @@ model_results <- rbind(model_results
                         ,data.frame(Model = 'Naive Bayes'
                         ,Data = 'Low Correlation'
                         ,Accuracy = nb.cm.lc$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Presicion = nb.cm.lc$byClass[5]
                         ,Kappa = nb.cm.lc$overall[2]
                         ,F1 = nb.cm.lc$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ,ROC = performance[,1]))
 
 rownames(model_results) <- NULL
 
@@ -699,11 +712,12 @@ model_results <- rbind(model_results
                         ,data.frame(Model = 'Random Forest'
                         ,Data = 'Full'
                         ,Accuracy = rf.cm.ud$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Presicion = rf.cm.ud$byClass[5]
                         ,Kappa = rf.cm.ud$overall[2]
                         ,F1 = rf.cm.ud$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ,ROC = performance[,1]))
 
 # RFE selection data set
 set.seed(1234)
@@ -721,11 +735,12 @@ model_results <- rbind(model_results
                         ,data.frame(Model = 'Random Forest'
                         ,Data = 'RFE Selection'
                         ,Accuracy = rf.cm.md$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Presicion = rf.cm.md$byClass[5]
                         ,Kappa = rf.cm.md$overall[2]
                         ,F1 = rf.cm.md$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ,ROC = performance[,1]))
 
 # Low correlation data set
 set.seed(1234)
@@ -743,11 +758,12 @@ model_results <- rbind(model_results
                         ,data.frame(Model = 'Random Forest'
                         ,Data = 'Low Correlation'
                         ,Accuracy = rf.cm.lc$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Presicion = rf.cm.lc$byClass[5]
                         ,Kappa = rf.cm.lc$overall[2]
                         ,F1 = rf.cm.lc$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ,ROC = performance[,1]))
 
 rownames(model_results) <- NULL
 
@@ -774,99 +790,8 @@ saveRDS(rf.model.ud, "Models/rf_use_data.rds")
 saveRDS(rf.model.md, "Models/rf_model_data.rds")
 saveRDS(rf.model.lc, "Models/rf_use_data_lc.rds")
 
-###############################################################################
-# Nueral Network - LOOCV  
-# https://machinelearningmastery.com/tune-machine-learning-algorithms-in-r/
-# https://www.analyticsvidhya.com/blog/2016/12/practical-guide-to-implement-machine-learning-with-caret-package-in-r-with-practice-problem/
-###############################################################################
 
-# Enable parallel processing and reserve resources
-cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
-registerDoParallel(cluster)
-
-# Set up training conditions - must use LOOCV
-fitControl <- trainControl(method = "LOOCV"
-                           ,classProbs = TRUE 
-                           ,summaryFunction = twoClassSummary
-                           ,savePredictions = 'final'
-                           ,allowParallel = TRUE)
-
-# Full data set
-set.seed(1234)
-nnet.model.ud <- caret::train(Label ~.
-                              ,data = use_data
-                              ,method = 'nnet'
-                              ,trControl = fitControl
-                              ,metric = "ROC")
-
-nnet.cm.ud <- caret::confusionMatrix(nnet.model.ud$pred$pred, nnet.model.ud$pred$obs)
-
-# Get the performance metrics from the model and save for comparison
-performance <- getTrainPerf(nnet.model.ud)
-model_results <- rbind(model_results
-                        ,data.frame(Model = 'Neural Network'
-                        ,Data = 'Full'
-                        ,Accuracy = nnet.cm.ud$overall[1]
-                        ,Kappa = nnet.cm.ud$overall[2]
-                        ,F1 = nnet.cm.ud$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
-
-rownames(model_results) <- NULL
-###########################################################################
-# Set up training conditions - must use LOOCV
-fitControl <- trainControl(method = "repeatedcv"
-                           ,number = 10
-                           ,repeats = 5
-                           ,classProbs = TRUE 
-                           ,summaryFunction = twoClassSummary
-                           ,savePredictions = 'final'
-                           ,allowParallel = TRUE
-                           ,verboseIter = TRUE)
-
-nnetGrid <-  expand.grid(size = seq(from = 1, to = 10, by = 1),
-                         decay = seq(from = 0.1, to = 0.5, by = 0.1))
-
-# Full data set
-set.seed(1234)
-nnet.model.cv <- caret::train(Label ~.
-                              ,data = model_data
-                              ,method = 'nnet'
-                              ,trControl = fitControl
-                              ,tuneGrid = nnetGrid
-                              ,metric = "ROC")
-
-nnet.cm.cv <- caret::confusionMatrix(nnet.model.cv$pred$pred, nnet.model.cv$pred$obs)
-
-# Get the performance metrics from the model and save for comparison
-performance <- getTrainPerf(nnet.model.cv)
-model_results <- rbind(model_results
-                       ,data.frame(Model = 'Neural Network'
-                                   ,Data = 'Full'
-                                   ,Accuracy = nnet.cm.cv$overall[1]
-                                   ,Kappa = nnet.cm.cv$overall[2]
-                                   ,F1 = nnet.cm.cv$byClass[7]
-                                   ,ROC = performance[,1]
-                                   ,Sensitivity = performance[,2]
-                                   ,Specificity = performance[,3]))
-
-rownames(model_results) <- NULL
-
-# Disable parallel processing and release resources
-stopCluster(cluster)
-registerDoSEQ()
-
-nnet.ROC <- roc(nnet.model$pred$obs, nnet.model$pred$Normal)
-plot(nnet.ROC, col = "blue")
-auc(nnet.ROC)
-
-# Save models in case we want to review them later
-saveRDS(model_results, "model_results.rds")
-saveRDS(nnet.model, "Models/nnet_use_data.rds")
-saveRDS(nnet.model, "Models/nnet_use_data_lc.rds")
-saveRDS(nnet.model, "Models/nnet_model_data.rds")
-
+##################################Figure out what to use here
 
 ###############################################################################
 # XGBoost - LOOCV  
@@ -993,3 +918,97 @@ impVars <- train(Label ~ .,
 decisionplot(model = impVars, data = vars, class = "Label", 
              main = "Random Forest: Important Variables - Cultivar 1", predict_type = "raw")
 
+
+###############################################################################
+# Nueral Network - LOOCV  
+# https://machinelearningmastery.com/tune-machine-learning-algorithms-in-r/
+# https://www.analyticsvidhya.com/blog/2016/12/practical-guide-to-implement-machine-learning-with-caret-package-in-r-with-practice-problem/
+###############################################################################
+
+# Enable parallel processing and reserve resources
+cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
+registerDoParallel(cluster)
+
+# Set up training conditions - must use LOOCV
+fitControl <- trainControl(method = "LOOCV"
+                           ,classProbs = TRUE 
+                           ,summaryFunction = twoClassSummary
+                           ,savePredictions = 'final'
+                           ,allowParallel = TRUE)
+
+# Full data set
+set.seed(1234)
+nnet.model.ud <- caret::train(Label ~.
+                              ,data = use_data
+                              ,method = 'nnet'
+                              ,trControl = fitControl
+                              ,metric = "ROC")
+
+nnet.cm.ud <- caret::confusionMatrix(nnet.model.ud$pred$pred, nnet.model.ud$pred$obs)
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(nnet.model.ud)
+model_results <- rbind(model_results
+                       ,data.frame(Model = 'Neural Network'
+                                   ,Data = 'Full'
+                                   ,Accuracy = nnet.cm.ud$overall[1]
+                                   ,Sensitivity = performance[,2]
+                                   ,Specificity = performance[,3]
+                                   ,Presicion = nnet.cm.ud$byClass[5]
+                                   ,Kappa = nnet.cm.ud$overall[2]
+                                   ,F1 = nnet.cm.ud$byClass[7]
+                                   ,ROC = performance[,1]))
+
+rownames(model_results) <- NULL
+###########################################################################
+# Set up training conditions - must use LOOCV
+fitControl <- trainControl(method = "repeatedcv"
+                           ,number = 10
+                           ,repeats = 5
+                           ,classProbs = TRUE 
+                           ,summaryFunction = twoClassSummary
+                           ,savePredictions = 'final'
+                           ,allowParallel = TRUE
+                           ,verboseIter = TRUE)
+
+nnetGrid <-  expand.grid(size = seq(from = 1, to = 10, by = 1),
+                         decay = seq(from = 0.1, to = 0.5, by = 0.1))
+
+# Full data set
+set.seed(1234)
+nnet.model.cv <- caret::train(Label ~.
+                              ,data = model_data
+                              ,method = 'nnet'
+                              ,trControl = fitControl
+                              ,tuneGrid = nnetGrid
+                              ,metric = "ROC")
+
+nnet.cm.cv <- caret::confusionMatrix(nnet.model.cv$pred$pred, nnet.model.cv$pred$obs)
+
+# Get the performance metrics from the model and save for comparison
+performance <- getTrainPerf(nnet.model.cv)
+model_results <- rbind(model_results
+                       ,data.frame(Model = 'Neural Network'
+                                   ,Data = 'Full'
+                                   ,Accuracy = nnet.cm.cv$overall[1]
+                                   ,Kappa = nnet.cm.cv$overall[2]
+                                   ,F1 = nnet.cm.cv$byClass[7]
+                                   ,ROC = performance[,1]
+                                   ,Sensitivity = performance[,2]
+                                   ,Specificity = performance[,3]))
+
+rownames(model_results) <- NULL
+
+# Disable parallel processing and release resources
+stopCluster(cluster)
+registerDoSEQ()
+
+nnet.ROC <- roc(nnet.model$pred$obs, nnet.model$pred$Normal)
+plot(nnet.ROC, col = "blue")
+auc(nnet.ROC)
+
+# Save models in case we want to review them later
+saveRDS(model_results, "model_results.rds")
+saveRDS(nnet.model, "Models/nnet_use_data.rds")
+saveRDS(nnet.model, "Models/nnet_use_data_lc.rds")
+saveRDS(nnet.model, "Models/nnet_model_data.rds")

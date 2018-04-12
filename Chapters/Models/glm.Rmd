@@ -6,13 +6,14 @@ Generalized Linear Models are an extension of linear regression that allow for t
 
 # Create a data frame to hold the results
 glm_results <- data.frame(Model = character()
-                             ,Data = character()
-                             ,Accuracy = numeric()
-                             ,Kappa = numeric()
-                             ,F1 = numeric()
-                             ,ROC = numeric()
-                             ,Sensitivity = numeric()
-                             ,Specificity = numeric())
+                          ,Data = character()
+                          ,Accuracy = numeric()
+                          ,Sensitivity = numeric()
+                          ,Specificity = numeric()
+                          ,Precision = numeric()
+                          ,Kappa = numeric()
+                          ,F1 = numeric()
+                          ,ROC = numeric())
 ```
 
 ```{r glm_models, echo = FALSE}
@@ -50,11 +51,13 @@ glm_results <- rbind(glm_results
                         ,data.frame(Model = 'GLM'
                         ,Data = 'Full'
                         ,Accuracy = glm.cm.ud$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Precision = glm.cm.ud$byClass[5]
                         ,Kappa = glm.cm.ud$overall[2]
                         ,F1 = glm.cm.ud$byClass[7]
                         ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ))
 
 # RFE selection data set
 #set.seed(1234)
@@ -76,11 +79,12 @@ glm_results <- rbind(glm_results
                         ,data.frame(Model = 'GLM'
                         ,Data = 'RFE Selection'
                         ,Accuracy = glm.cm.md$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Precision = glm.cm.md$byClass[5]
                         ,Kappa = glm.cm.md$overall[2]
                         ,F1 = glm.cm.md$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ,ROC = performance[,1]))
 
 # Low correlation data set
 #set.seed(1234)
@@ -102,11 +106,12 @@ glm_results <- rbind(glm_results
                         ,data.frame(Model = 'GLM'
                         ,Data = 'Low Correlation'
                         ,Accuracy = glm.cm.lc$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Precision = glm.cm.lc$byClass[5]
                         ,Kappa = glm.cm.lc$overall[2]
                         ,F1 = glm.cm.lc$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ,ROC = performance[,1]))
 
 rownames(glm_results) <- NULL
 

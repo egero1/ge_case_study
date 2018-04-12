@@ -7,7 +7,7 @@ A radial basis function kernel (RBF) was selected to classify since the data is 
 $$f(x)=\sum_{i}^{N}\alpha _{i}y_{i} exp(-\left \| x-x_{i} \right \|^{2}/2\sigma ^2) + b$$
 The main take away is that a wider or softer margin is created when C is decreased and that for larger values of $\sigma$ the decision boundary tends to be smoother and more flexible. It also tends to misclassify more often, but reduces the likelihood of overfitting the model [@wang_2014].
 
-```{svm_boundary, echo = FALSE}
+```{r svm_bound_plot, echo = FALSE, out.width = '350px', fig.cap = 'Decision Boundaries', fig.align = "center", fig.pos = 'H'}
 
 vars <- model_data[,c('Hist_2_150_2_Entropy', 'Hist_2_30_2_Entropy', 'Label')]
 fitControl = trainControl(classProbs = TRUE)
@@ -19,10 +19,6 @@ impVars <- train(Label ~ .,
                  gamma = 1,
                  importance = TRUE,
                  trControl = fitControl)
-
-```
-
-```{r svm_bound_plot, echo = FALSE, out.width = '350px', fig.cap = 'Decision Boundaries', fig.align = "center", fig.pos = 'H'}
 
 decisionplot <- function(model, data1, data2, class = NULL, predict_type = "class",
                          resolution = 100, showgrid = TRUE, ...) {
@@ -60,7 +56,7 @@ decisionplot <- function(model, data1, data2, class = NULL, predict_type = "clas
         invisible(z)
 }
 
-decisionplot(model = impVars, data1 = model_data['Hist_2_150_2_Entropy'], data2 = vars[,2], class = "Label", main = "SVM: Important Variables", predict_type = "raw")
+decisionplot(model = impVars, data1 = model_data['Hist_2_150_2_Entropy'], data2 = model_data['Hist_2_30_2_Entropy'], class = "Label", main = "SVM: Important Variables", predict_type = "raw")
 
 ```
 
@@ -68,13 +64,14 @@ decisionplot(model = impVars, data1 = model_data['Hist_2_150_2_Entropy'], data2 
 
 # Create a data frame to hold the results
 svm_results <- data.frame(Model = character()
-                             ,Data = character()
-                             ,Accuracy = numeric()
-                             ,Kappa = numeric()
-                             ,F1 = numeric()
-                             ,ROC = numeric()
-                             ,Sensitivity = numeric()
-                             ,Specificity = numeric())
+                          ,Data = character()
+                          ,Accuracy = numeric()
+                          ,Sensitivity = numeric()
+                          ,Specificity = numeric()
+                          ,Precision = numeric()
+                          ,Kappa = numeric()
+                          ,F1 = numeric()
+                          ,ROC = numeric())
 ```
 
 ```{r svm_models, echo = FALSE}
@@ -108,11 +105,12 @@ svm_results <- rbind(svm_results
                         ,data.frame(Model = 'SVM'
                         ,Data = 'Full'
                         ,Accuracy = svm.cm.ud$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Precision = svm.cm.ud$byClass[5]
                         ,Kappa = svm.cm.ud$overall[2]
                         ,F1 = svm.cm.ud$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ,ROC = performance[,1]))
 
 # RFE selection data set
 #set.seed(1234)
@@ -133,11 +131,12 @@ svm_results <- rbind(svm_results
                         ,data.frame(Model = 'SVM'
                         ,Data = 'RFE Selection'
                         ,Accuracy = svm.cm.md$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Precision = svm.cm.md$byClass[5]
                         ,Kappa = svm.cm.md$overall[2]
                         ,F1 = svm.cm.md$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ,ROC = performance[,1]))
 
 # Low correlation data set
 #set.seed(1234)
@@ -158,11 +157,12 @@ svm_results <- rbind(svm_results
                         ,data.frame(Model = 'SVM'
                         ,Data = 'Low Correlation'
                         ,Accuracy = svm.cm.lc$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Precision = svm.cm.lc$byClass[5]
                         ,Kappa = svm.cm.lc$overall[2]
                         ,F1 = svm.cm.lc$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ,ROC = performance[,1]))
 
 rownames(svm_results) <- NULL
 

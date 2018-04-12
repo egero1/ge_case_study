@@ -4,13 +4,14 @@
 
 # Create a data frame to hold the results
 nb_results <- data.frame(Model = character()
-                             ,Data = character()
-                             ,Accuracy = numeric()
-                             ,Kappa = numeric()
-                             ,F1 = numeric()
-                             ,ROC = numeric()
-                             ,Sensitivity = numeric()
-                             ,Specificity = numeric())
+                          ,Data = character()
+                          ,Accuracy = numeric()
+                          ,Sensitivity = numeric()
+                          ,Specificity = numeric()
+                          ,Precision = numeric()
+                          ,Kappa = numeric()
+                          ,F1 = numeric()
+                          ,ROC = numeric())
 ```
 
 ```{r nb_models, echo = FALSE}
@@ -44,11 +45,12 @@ nb_results <- rbind(nb_results
                         ,data.frame(Model = 'Naive Bayes'
                         ,Data = 'Full'
                         ,Accuracy = nb.cm.ud$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Precision = nb.cm.ud$byClass[5]
                         ,Kappa = nb.cm.ud$overall[2]
                         ,F1 = nb.cm.ud$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ,ROC = performance[,1]))
 
 # RFE selection data set
 #set.seed(1234)
@@ -69,11 +71,12 @@ nb_results <- rbind(nb_results
                         ,data.frame(Model = 'Naive Bayes'
                         ,Data = 'RFE Selection'
                         ,Accuracy = nb.cm.md$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Precision = nb.cm.md$byClass[5]
                         ,Kappa = nb.cm.md$overall[2]
                         ,F1 = nb.cm.md$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ,ROC = performance[,1]))
 
 # Low correlation data set
 #set.seed(1234)
@@ -94,11 +97,12 @@ nb_results <- rbind(nb_results
                         ,data.frame(Model = 'Naive Bayes'
                         ,Data = 'Low Correlation'
                         ,Accuracy = nb.cm.lc$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Precision = nb.cm.lc$byClass[5]
                         ,Kappa = nb.cm.lc$overall[2]
                         ,F1 = nb.cm.lc$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ,ROC = performance[,1]))
 
 rownames(nb_results) <- NULL
 

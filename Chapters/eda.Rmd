@@ -109,15 +109,15 @@ grid.arrange(plots[[1]], plots[[2]], ncol = 2)
 ```
 \subsection{Evaluation Metrics}
 
-In order to understand how well the models are performing, or detecting Pneumoconiosis, various evaluation metrics will be considered. The most common evaluation metrics for classification include sensitivity, specificity, precision, F1 and accuracy and are based on the rates of True Positive (TP), True Negative (TN), False Positive (FN) and False Negative (FN). 
+In order to understand how well the models are performing, or detecting Pneumoconiosis, various evaluation metrics will be considered. The most common evaluation metrics for classification include recall (sensitivity), specificity, precision, F1 and accuracy and are based on the rates of True Positive (TP), True Negative (TN), False Positive (FN) and False Negative (FN). 
 
 Since the evaluation metrcis are defined in terms of TP, TN, FP and FN rates, definitions for each are provided. TP is when the model predicts 'Abnormal' and the patient actually does have Pneumoconiosis. TN is when the model predicts 'Normal' and the patient does not have Pneumoconiosis. FP is when the model predicts 'Abnormal, but the patient does not actually have Pneumoconiosis, and FN is when the model predicts 'Normal', but Pneumoconiosis is present. The following definitions can now be applied:
 
 ### Evaluation metric definitions [@evalmetric]
-* Sensitivity (recall) - true positive rate = TP/(TP + FN)
+* Accuracy - $(\frac{1}{N})|\left \{ i|y_{i} = \hat{y}_{i} \right \}|$ = (TN + TP)/(TN + TP + FN + FP)
+* Recall (sensitivity) - $\frac{|\left \{ i|y_{i} = \hat{y}_{i}, \hat{y}_{i} = 1 \right \}|}{|\left \{ i|y_{i} = 1 \right \}|}$ = TP/(TP + FN)
 * Specificity - true negative rate = TN/(TN + FP)
-* Accuracy - proportion of true positive or true negative = (TN + TP)/(TN + TP + FN + FP)
-* Precision - proportion of correctly predicted positive observations to the total predicted positive observations = TP/(TP + FP)
+* Precision - $\frac{|\left \{ i|y_{i} = \hat{y}_{i}, \hat{y}_{i} = 1 \right \}|}{|\left \{ i|\hat{y}_{i} = 1 \right \}|}$ = TP/(TP + FP)
 * F1 - weighted average of precision and recall = 2 * (TP/(TP + FN) * TP/(TP + FP))/(TP/(TP + FN) + TP/(TP + FP))
 * Kappa - (observed accuracy - expected accuracy)/(1 - expected accuracy) 
     + observed accuracy = (TN + TP) / (TN + TP + FN + FP)

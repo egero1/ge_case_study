@@ -4,13 +4,14 @@
 
 # Create a data frame to hold the results
 knn_results <- data.frame(Model = character()
-                             ,Data = character()
-                             ,Accuracy = numeric()
-                             ,Kappa = numeric()
-                             ,F1 = numeric()
-                             ,ROC = numeric()
-                             ,Sensitivity = numeric()
-                             ,Specificity = numeric())
+                          ,Data = character()
+                          ,Accuracy = numeric()
+                          ,Sensitivity = numeric()
+                          ,Specificity = numeric()
+                          ,Precision = numeric()
+                          ,Kappa = numeric()
+                          ,F1 = numeric()
+                          ,ROC = numeric())
 ```
 
 ```{r knn_models, echo = FALSE}
@@ -46,11 +47,12 @@ knn_results <- rbind(knn_results
                         ,data.frame(Model = 'kNN'
                         ,Data = 'Full'
                         ,Accuracy = knn.cm.ud$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Precision = knn.cm.ud$byClass[5]
                         ,Kappa = knn.cm.ud$overall[2]
                         ,F1 = knn.cm.ud$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ,ROC = performance[,1]))
 
 # RFE selection data set
 #set.seed(1234)
@@ -73,11 +75,12 @@ knn_results <- rbind(knn_results
                         ,data.frame(Model = 'kNN'
                         ,Data = 'RFE Selection'
                         ,Accuracy = knn.cm.md$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Precision = knn.cm.md$byClass[5]
                         ,Kappa = knn.cm.md$overall[2]
                         ,F1 = knn.cm.md$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ,ROC = performance[,1]))
 
 # Low correlation data set
 #set.seed(1234)
@@ -100,11 +103,12 @@ knn_results <- rbind(knn_results
                         ,data.frame(Model = 'kNN'
                         ,Data = 'Low Correlation'
                         ,Accuracy = knn.cm.lc$overall[1]
+                        ,Sensitivity = performance[,2]
+                        ,Specificity = performance[,3]
+                        ,Precision = knn.cm.lc$byClass[5]
                         ,Kappa = knn.cm.lc$overall[2]
                         ,F1 = knn.cm.lc$byClass[7]
-                        ,ROC = performance[,1]
-                        ,Sensitivity = performance[,2]
-                        ,Specificity = performance[,3]))
+                        ,ROC = performance[,1]))
 
 rownames(knn_results) <- NULL
 
