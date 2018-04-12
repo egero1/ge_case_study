@@ -149,7 +149,7 @@ plot(glm.ROC, col = 'blue', main = paste('GLM - Area under the curve (AUC):', ro
 
 ```
 
-Lastly, since GLM is extension of linear regression, the regression coefficients are available for the model. To conserve space, only the first 10 are listed here. The full list of coefficients may be generated for further review if required.
+Lastly, since GLM is extension of linear regression, the regression coefficients are available for the model in __Table 10__. To conserve space, only the first 10 are listed here. The full list of coefficients may be generated for further review if required.
 
 ```{r glm_coefficients, echo = FALSE}
 # Print model coefficients

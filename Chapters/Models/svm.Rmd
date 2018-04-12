@@ -5,62 +5,18 @@ A Support Vector Machine (SVM) is a supervised machine learning algorithm define
 A radial basis function kernel (RBF) was selected to classify since the data is not linearly separable. The RBF is defined as:
 
 $$f(x)=\sum_{i}^{N}\alpha _{i}y_{i} exp(-\left \| x-x_{i} \right \|^{2}/2\sigma ^2) + b$$
-The main take away is that a wider or softer margin is created when C is decreased and that for larger values of $\sigma$ the decision boundary tends to be smoother and more flexible. It also tends to misclassify more often, but reduces the likelihood of overfitting the model [@wang_2014].
+
+The RBF has two tuning parameters available through the 'caret' package. A wider or softer margin is created when C (cost) is decreased and that for larger values of $\sigma$ the decision boundary tends to be smoother and more flexible. It also tends to misclassify more often, but reduces the likelihood of overfitting the model [@wang_2014].
+
+__Figure 9__ provides an example of the non-linear decision boundary. Note that the separation is less than ideal, but that is to be expected since these variables were selected at random and represent only part of the models separation capabilities. Unforunately, it is not possible to plot the separation planes in 16-dimensions.
 
 ```{r svm_bound_plot, echo = FALSE, out.width = '350px', fig.cap = 'Decision Boundaries', fig.align = "center", fig.pos = 'H'}
 
-vars <- model_data[,c('Hist_2_150_2_Entropy', 'Hist_2_30_2_Entropy', 'Label')]
-fitControl = trainControl(classProbs = TRUE)
-
-set.seed(123)
-impVars <- train(Label ~ .,
-                 data = vars,
-                 method = "svmRadial",
-                 gamma = 1,
-                 importance = TRUE,
-                 trControl = fitControl)
-
-decisionplot <- function(model, data1, data2, class = NULL, predict_type = "class",
-                         resolution = 100, showgrid = TRUE, ...) {
-        
-       # if(!is.null(class)) cl <- data[,class] else cl <- 1
-        cl <- class
-        data <- data.frame(data1, data2)
-        #data <- data[, 1:2]
-        k <- length(unique(cl))
-        
-        plot(data, col = as.integer(cl)+1L, pch = as.integer(cl)+1L, ...)
-        legend("top", legend = unique(cl), horiz = TRUE, 
-               col = as.integer(unique(cl))+1L, pch = as.integer(unique(cl))+1L)
-        
-        # make grid
-        r <- sapply(data, range, na.rm = TRUE)
-        xs <- seq(r[1,1], r[2,1], length.out = resolution)
-        ys <- seq(r[1,2], r[2,2], length.out = resolution)
-        g <- cbind(rep(xs, each=resolution), rep(ys, time = resolution))
-        colnames(g) <- colnames(r)
-        g <- as.data.frame(g)
-        
-        ### guess how to get class labels from predict
-        ### (unfortunately not very consistent between models)
-        p <- predict(model, g, type = predict_type)
-        if(is.list(p)) p <- p$class
-        p <- as.factor(p)
-        
-        if(showgrid) points(g, col = as.integer(p)+1L, pch = ".")
-        
-        z <- matrix(as.integer(p), nrow = resolution, byrow = TRUE)
-        contour(xs, ys, z, add = TRUE, drawlabels = FALSE,
-                lwd = 1, levels = (1:(k-1))+.5)
-        
-        invisible(z)
-}
-
-decisionplot(model = impVars, data1 = model_data['Hist_2_150_2_Entropy'], data2 = model_data['Hist_2_30_2_Entropy'], class = "Label", main = "SVM: Important Variables", predict_type = "raw")
+include_graphics("./Photos/svm_boundaries.jpg")
 
 ```
 
-```{r svm_results, echo = FALSE}
+```{r svm_model, echo = FALSE}
 
 # Create a data frame to hold the results
 svm_results <- data.frame(Model = character()
@@ -172,13 +128,32 @@ rownames(svm_results) <- NULL
 
 ```
 
-```{r svm_roc, echo = FALSE}
+The evaluation metrics for the SVM models are available in __Table 11__. As with the GLM models, the full data set has a slight edge here with an accuracy of `r round(svm.cm.ud$overall[1] * 100, 2)`%. 
+
+```{r svm_results, echo = FALSE}
 
 kable(svm_results, caption = "SVM Model Results", booktabs = TRUE) %>% 
         kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
+```
+
+The confusion matrix for this model is available in __Table 12__. The model detects Pneumoconiosis in 83 patients when no disease is actually present, and fails to detect the presence of Pneumoconiosis in 129 patients. 
+
+```{r svm_table, echo = FALSE}
+
+kable(glm.cm.ud$table, caption = "SVM Model Confusion Matrix", booktabs = TRUE) %>% 
+        kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
 
 svm.ROC <- roc(svm.model.ud$pred$obs, svm.model.ud$pred$Normal)
+svm.auc <- auc(svm.ROC)
+
+```
+
+The AUC in __Figure 10__ of `r svm.auc` is a slight improvement over the best GLM model.  
+
+```{r svm_roc, echo = FALSE, out.width = '350px', fig.cap = 'SVM ROC Curve', fig.align = "center", fig.pos = 'H'}
+
 plot(svm.ROC, col = 'blue', main = paste('SVM - Area under the curve (AUC):', round(auc(svm.ROC),2)))
 
 ```
 
+The SVM models do show an improvement, but not as much as hoped or expected. This is partially due to the use of LOOCV. Manually tuning this model would likely significantly improve the model's performance.
