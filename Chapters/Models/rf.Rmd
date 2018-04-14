@@ -1,6 +1,12 @@
 \subsection{Random Forest Models}
 
-```{r rf_results, echo = FALSE}
+The Random Forest algoritm is also quite popular and can be used for regression or classification. They are known for above average results since they encompass all the benefits of decision trees, and they are not prone to over-fitting. 
+
+For classification, a Random Forest will grow many decision trees. Each tree provides a classification which is considered a vote. The alogrithm then chooses the classification that has the most votes from all the trees in the forest.
+
+There is some debate about the need for cross validation with Random Forests since each tree is grown with a list of randomly selected samples. This process leaves out approximately $\frac{1}{3}$ of the samples for testing the grown tree. Because the samples are randomly selected, each tree has its own learning and out-of-bag sample set, making LOOCV somewhat redundant. However, it is technically not incorrect to use cross validation with Random Forests since cross validation is one way to ensure that all data is used during the training or testing phase.
+
+```{r rf_model, echo = FALSE}
 
 # Create a data frame to hold the results
 rf_results <- data.frame(Model = character()
@@ -110,17 +116,22 @@ rownames(rf_results) <- NULL
 
 ```
 
-```{r rf_roc, echo = FALSE}
+As seen in __Table 18__, the model using the trimmed data set from the 'rfe' function is the best of the three, and the best model of all so far. The model has an accuracy of `r round(rf.cm.md$overall[1] * 100, 2)`%. 
+
+```{r rf_results, echo = FALSE}
 
 kable(rf_results, caption = "Random Forest Model Results", booktabs = TRUE) %>% 
         kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
 
-rf.ROC <- roc(rf.model.md$pred$obs, rf.model.md$pred$Normal)
-plot(rf.ROC, col = 'blue', main = paste('RF - Area under the curve (AUC):', round(auc(rf.ROC),2)))
-
 ```
 
-```{r rf_varimp, echo = FALSE}
+\FloatBarrier
+
+__Figure 14__ provides a Variable Importance plot. This plot shows the variables that were most impactful in the model. One disadvantage of Random Forests, as well as many machine learning alogrithms, is that they operate as a 'black box' so it is difficult to understand how the model is making predictions.
+
+The variables are listed from the top down in order of importance as determined by the Mean Decrease Gini. Variables that result in nodes with higher purity have a higher decrease in Gini coefficient. The Variable Importance plot can also be used for feature selection. Note the break after *Hist_1_180_2_StdDev*. *Hist_2_150_2_Mean* and the variables below it are not contributing as much to the model, so it is possible that removing them would not have a huge impact on the model's performance.
+
+```{r rf_varimp, echo = FALSE, out.width = '350px', fig.cap = 'RF Variable Importance', fig.align = "center", fig.pos = 'H'}
 
 # Variable importance plot
 imp <- as.data.frame(rf.model.md$finalModel$importance)
@@ -131,5 +142,25 @@ ggplot(imp, aes(x = reorder(rownames(imp), MeanDecreaseGini), MeanDecreaseGini))
         ggtitle("Random Forest - Variable Importance") +
         xlab("Variables") +
         ylab("Mean Decrease Gini")
+
+```
+
+The confusion matrix for the model is available in __Table 19__. The model misclassified 123 patients as disease free when Pneumoconiosis actually was present. However, the model was able to mimimize the number of false positives and classified 37 patients as having Pneumoconiosis, when the disease was not actually present.
+
+```{r rf_table, echo = FALSE}
+
+kable(rf.cm.md$table, caption = "RF Model Confusion Matrix", booktabs = TRUE) %>% 
+        kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
+
+rf.ROC <- roc(rf.model.md$pred$obs, rf.model.md$pred$Normal)
+rf.auc <- auc(rf.ROC)
+
+```
+
+As previosly noted, AUC in __Figure 15__ of `r rf.auc` is slightly misleading. While the specificity is quite good, the sensitivety still shows some issues. If one were to evaluate the model based on soley on the AUC, they might believe the model is performing much better than it actually is.
+
+```{r rf_roc, , echo = FALSE, out.width = '350px', fig.cap = 'RF ROC Curve', fig.align = "center", fig.pos = 'H'}
+
+plot(rf.ROC, col = 'blue', main = paste('RF - Area under the curve (AUC):', round(auc(rf.ROC),2)))
 
 ```

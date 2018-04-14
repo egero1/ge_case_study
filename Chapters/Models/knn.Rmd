@@ -1,6 +1,10 @@
 \subsection{k-Nearest Neighbor} 
 
-```{r knn_results, echo = FALSE}
+The k-Nearest Neighbor (kNN) algorithm is one of the simplest, yet most popular classifiers. It is non-parametric, meaning it makes no assumptions about the distribution of the data. It is also a lazy algorithm, meaning the training phase is very minimal. The algorithm performs classification through a majority vote of its k nearest neighbors, hence the name [@bronshtein_2017]
+
+Some of the advantages of kNN include insensitivity to outliers, high accuracy, and useful for classification and regression. However, kNN has high memory requirements and the data should be centered and scale prior to fitting the model.
+
+```{r knn_model, echo = FALSE}
 
 # Create a data frame to hold the results
 knn_results <- data.frame(Model = character()
@@ -118,19 +122,41 @@ rownames(knn_results) <- NULL
 
 ```
 
-```{r knn_roc, echo = FALSE}
+The evaluation metrics for the kNN models are available in __Table 13__. The trimmed data set from the 'rfe' method performed best with an accuracy of `r round(knn.cm.md$overall[1] * 100, 2)`%. This is the best performing model so far.
+
+```{r knn_results, echo = FALSE}
 
 kable(knn_results, caption = "kNN Model Results", booktabs = TRUE) %>% 
         kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
 
+```
+
+\FloatBarrier
+
+The confusion matrix for this model is available in __Table 14__. The model predicts Pneumoconiosis in 76 patients when no disease is actually present, but fails to predict the presence of Pneumoconiosis in 95 patients.
+
+```{r knn_table, echo = FALSE}
+
+kable(knn.cm.md$table, caption = "kNN Model Confusion Matrix", booktabs = TRUE) %>% 
+        kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
+
 knn.ROC <- roc(knn.model.md$pred$obs, knn.model.md$pred$Normal)
+knn.auc <- auc(knn.ROC)
+
+```
+
+The AUC in __Figure 11__ of `r knn.auc` shows that the model is performing quite well. Recall that the AUC of a perfect model is 1.00.
+
+```{r knn_roc, echo = FALSE, out.width = '350px', fig.cap = 'kNN ROC Curve', fig.align = "center", fig.pos = 'H'}
+
 plot(knn.ROC, col = 'blue', main = paste('kNN - Area under the curve (AUC):', round(auc(knn.ROC),2)))
 
 ```
 
-```{r knn_plot, echo = FALSE}
+The plot in __Figure 12__ shows how the AUC changes as more neighbors are selected. The model performs best with `r knn.model.md$bestTune` neighbors and the performance degrades as more neighbors are added.
+
+```{r knn_neighbors, echo = FALSE, out.width = '350px', fig.cap = 'Values of k', fig.align = "center", fig.pos = 'H'}
 
 plot(knn.model.md, main = paste('k = ', knn.model.md$bestTune))
-
 
 ```

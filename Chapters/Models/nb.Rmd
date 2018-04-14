@@ -1,6 +1,10 @@
-\subsection{Naive Bayesian Models} 
+\subsection{Naive Bayes Models} 
 
-```{r nb_results, echo = FALSE}
+The Naive Bayes classifier is a simple and fast learner that is known to provide excellent results. It is based on Bayes' Theorem which provides a way of calculating posterior probability P(c|x) from P(c), P(x) and P(x|c). The model works by first creating a frequency table from the data, then using that frequency table to calculate the probabilities. The Naive Bayesian equation (below) is then used to calcuate the posterior probability for each class, selecting the class with the highest probability [@ray_2017_nb].
+
+$$P(c|x) = \frac{P(x|c)P(c)}{P(x)}$$
+
+```{r nb_model, echo = FALSE}
 
 # Create a data frame to hold the results
 nb_results <- data.frame(Model = character()
@@ -112,12 +116,29 @@ rownames(nb_results) <- NULL
 
 ```
 
-```{r nb_roc, echo = FALSE}
+Unfortunately, Naive Bayes did not perform as well as expected, as seen in __Table 15__. The trimmed data set from the 'rfe' method provides the best accuracy at `r round(nb.cm.md$overall[1] * 100, 2)`%. The confusion matrix for this model is provided in __Table 16__ and the ROC plot is available in __Figure 13__. 
+
+The recall (sensitivity) for these models is the lowest that have been observed so far. While the type I errors of 112 are in line with other models, the type II (false negative) errors of 198 are quite high in comparison. It was suspected that the bimodal distribution of several variables was causing an issue, but removing them did not help the models' performance.
+
+```{r nb_results, echo = FALSE}
 
 kable(nb_results, caption = "Naive Bayes Model Results", booktabs = TRUE) %>% 
         kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
 
+```
+
+```{r nb_table, echo = FALSE}
+
+kable(nb.cm.md$table, caption = "NB Model Confusion Matrix", booktabs = TRUE) %>% 
+        kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
+
 nb.ROC <- roc(nb.model.md$pred$obs, nb.model.md$pred$Normal)
+nb.auc <- auc(nb.ROC)
+
+```
+
+```{r nb_roc, echo = FALSE, out.width = '350px', fig.cap = 'Naive Bayes ROC Curve', fig.align = "center", fig.pos = 'H'}
+
 plot(nb.ROC, col = 'blue', main = paste('NB - Area under the curve (AUC):', round(auc(nb.ROC),2)))
 
 ```

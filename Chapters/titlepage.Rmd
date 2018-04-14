@@ -1,20 +1,22 @@
 \begin{centering}
 
-\vspace{3 cm}
+\vspace{10 cm}
 
 \Huge
 
 {\bf GE Case Study: Detecting Pneumoconiosis}
 
-\vspace{3 cm}
+\vspace{10 cm}
 
 \Large
 
-Eric Gero (eric.gero@ge.com)
+Name withheld per instructions
 
-\vspace{3 cm}
+\vspace{8 cm}
 
 \normalsize
 April 2018
 
 \end{centering}
+
+\pagenumbering{gobble}

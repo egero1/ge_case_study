@@ -63,3 +63,5 @@ The traditional method for detecting Pneumoconiosis requires trained doctors to 
 include_graphics("./Photos/lung_photo.jpg")
 
 ```
+
+\pagenumbering{arabic}

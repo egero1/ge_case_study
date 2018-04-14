@@ -129,7 +129,7 @@ kable(glm_results, caption = "GLM Model Results", booktabs = TRUE) %>%
         kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
 ```
 
-The confusion matrix for this model is available in __Table 9__. While the model is not performing poorly, it is only slightly better than the naive model and detects Pneumoconiosis in 105 patients when no disease is actually present; this is known as at type 1 error. The model also fails to detect the presence of Pneumoconiosis in 139 patients; this is a type 2 error.
+The confusion matrix for this model is available in __Table 9__. While the model is not performing poorly, it is only slightly better than the naive model and predicts Pneumoconiosis in 105 patients when no disease is actually present; this is known as at type I error. The model also fails to predict the presence of Pneumoconiosis in 139 patients; this is a type II error.
 
 ```{r glm_table, echo = FALSE}
 

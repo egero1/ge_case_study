@@ -49,6 +49,8 @@ corrplot(corr, type = "upper", tl.cex = 0.5, tl.col = "blue", tl.srt = 45)
 
 ```
 
+__distribution of the variables.. some are bimodel__
+
 ```{r high_correlation, echo = FALSE}
 
 # Review and remove highly correlated predictors

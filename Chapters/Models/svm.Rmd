@@ -136,7 +136,7 @@ kable(svm_results, caption = "SVM Model Results", booktabs = TRUE) %>%
         kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
 ```
 
-The confusion matrix for this model is available in __Table 12__. The model detects Pneumoconiosis in 83 patients when no disease is actually present, and fails to detect the presence of Pneumoconiosis in 129 patients. 
+The confusion matrix for this model is available in __Table 12__. The model predicts Pneumoconiosis in 83 patients when no disease is actually present, and fails to predict the presence of Pneumoconiosis in 129 patients. 
 
 ```{r svm_table, echo = FALSE}
 

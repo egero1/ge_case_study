@@ -915,8 +915,7 @@ impVars <- train(Label ~ .,
                  importance = TRUE,
                  trControl = fitControl)
 
-decisionplot(model = impVars, data = vars, class = "Label", 
-             main = "Random Forest: Important Variables - Cultivar 1", predict_type = "raw")
+decisionplot(model = impVars, data = vars, class = "Label", predict_type = "raw")
 
 
 ###############################################################################

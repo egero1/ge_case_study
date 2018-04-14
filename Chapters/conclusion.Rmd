@@ -1,3 +1,3 @@
 # Conclusion
 
-Not sure why there is nothing here.
+stuck with using loocv, normally would select a couple models based on experience and then tune those models.. try something else if that doesnt work... with loocv cant really tune models, just selecting the best from the results.
