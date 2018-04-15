@@ -141,7 +141,7 @@ glm.auc <- auc(glm.ROC)
 
 ```
 
-The AUC in __Figure 8__ of `r glm.auc` is slightly misleading given a model accuracy of `r round(glm.cm.ud$overall[1] * 100, 2)`%. For classification, no single evaluation metric tells the whole story, so it is always best to review several. The 'confusionMatrix' function in the 'caret' package makes generating all necessary evaluation metrics relatively easy.
+The AUC in __Figure 9__ of `r glm.auc` is slightly misleading given a model accuracy of `r round(glm.cm.ud$overall[1] * 100, 2)`%. For classification, no single evaluation metric tells the whole story, so it is always best to review several. The 'confusionMatrix' function in the 'caret' package makes generating all necessary evaluation metrics relatively easy.
 
 ```{r glm_roc, echo = FALSE, out.width = '350px', fig.cap = 'GLM ROC Curve', fig.align = "center", fig.pos = 'H'}
 

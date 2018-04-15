@@ -1,0 +1,169 @@
+\subsection{XGradient Boosting} 
+
+This final model should not be included as a formal submission since it does not use LOOCV. It is included to illustrate the predictive capabilities that are possible.
+
+Gradient Boosting is a machine learning technique that can be used for regression and classification. It works by creating an ensemble of weaker prediction models in a stage-wise fashion then generalizes them through the optimization of an arbitrary differentiable loss function.
+
+
+Gradient boosting is a machine learning technique for regression and classification problems, which produces a prediction model in the form of an ensemble of weak prediction models, typically decision trees. It builds the model in a stage-wise fashion like other boosting methods do, and it generalizes them by allowing optimization of an arbitrary differentiable loss function [@brownlee_2016].
+
+```{r xgb_model, echo = FALSE}
+
+# Create a data frame to hold the results
+xgb_results <- data.frame(Model = character()
+                          ,Data = character()
+                          ,Accuracy = numeric()
+                          ,Sensitivity = numeric()
+                          ,Specificity = numeric()
+                          ,Precision = numeric()
+                          ,Kappa = numeric()
+                          ,F1 = numeric()
+                          ,ROC = numeric())
+```
+
+``` {r xgb_setup, echo = FALSE, include = FALSE}
+
+# Create training and test datasets
+trainIndex <- createDataPartition(use_data$Label, p = 0.7, list = FALSE)
+trainData <- use_data[trainIndex,]
+testData <- use_data[-trainIndex,]
+
+# create data table data frames
+setDT(use_data)
+setDT(trainData) 
+setDT(testData)
+
+# using one hot encoding
+labels_all <- use_data$Label
+labels <- trainData$Label
+ts_label <- testData$Label
+new_all <- model.matrix(~.+0, data = use_data[,-c("Label"), with = F]) 
+new_tr <- model.matrix(~.+0, data = trainData[,-c("Label"), with = F]) 
+new_ts <- model.matrix(~.+0, data = testData[,-c("Label"), with = F])
+
+# convert factor to numeric
+labels_all <- as.numeric(labels_all) - 1
+labels <- as.numeric(labels) - 1
+ts_label <- as.numeric(ts_label) - 1
+
+# preparing matrix 
+adata <- xgb.DMatrix(data = new_all, label = labels_all) 
+dtrain <- xgb.DMatrix(data = new_tr, label = labels) 
+dtest <- xgb.DMatrix(data = new_ts, label = ts_label)
+
+# Set parameters
+params <- list(booster = "gbtree"
+               ,objective = "multi:softmax"
+               ,num_class = 2
+               ,eta = 0.3
+               ,gamma = 0
+               ,max_depth = 6
+               ,min_child_weight = 1
+               ,subsample = 1
+               ,colsample_bytree = 1)
+
+xgbcv <- xgb.cv(params = params
+                ,data = dtrain
+                ,nrounds = 200
+                ,nfold = 10
+                ,showsd = TRUE
+                ,stratified = TRUE
+                ,print_every_n = 10
+                ,early_stopping_rounds = 20
+                ,maximize = FALSE
+                ,eval_metric = "mlogloss")
+
+xgbcv$best_iteration
+
+# first default - model training
+xgb_ht <- xgb.train (params = params
+                     ,data = dtrain
+                     ,nrounds = 41
+                     ,watchlist = list(val = dtest, train = dtrain)
+                     ,print_every_n = 10
+                     ,early_stopping_rounds = 10
+                     ,maximize = F 
+                     ,eval_metric = "mlogloss")
+
+# model prediction
+xgbpred_ht <- predict(xgb_ht, dtest)
+
+# confusion matrix
+xgbcm_ht <- caret::confusionMatrix(xgbpred_ht, ts_label, mode = 'everything')
+
+xgb_results <- rbind(xgb_results
+                       ,data.frame(Model = 'X-Gradient Boost'
+                       ,Data = 'Training Set'
+                       ,Accuracy = xgbcm_ht$overall[1]
+                       ,Sensitivity = xgbcm_ht$byClass[1]
+                       ,Specificity = xgbcm_ht$byClass[2]
+                       ,Presicion = xgbcm_ht$byClass[5]
+                       ,Kappa = xgbcm_ht$overall[2]
+                       ,F1 = xgbcm_ht$byClass[7]
+                       ,ROC = NA))
+
+## predict on full data set 
+# get results for full data set
+xgb_pred_ht_all <- predict(xgb_ht, adata, response = "raw")
+
+# confusion matrix
+xgb_cm_ht_all <- caret::confusionMatrix(xgb_pred_ht_all, labels_all, mode = 'everything')
+
+xgb_results <- rbind(xgb_results
+                       ,data.frame(Model = 'X-Gradient Boost'
+                       ,Data = 'Training Set'
+                       ,Accuracy = xgb_cm_ht_all$overall[1]
+                       ,Sensitivity = xgb_cm_ht_all$byClass[1]
+                       ,Specificity = xgb_cm_ht_all$byClass[2]
+                       ,Presicion = xgb_cm_ht_all$byClass[5]
+                       ,Kappa = xgb_cm_ht_all$overall[2]
+                       ,F1 = xgb_cm_ht_all$byClass[7]
+                       ,ROC = NA))
+
+```
+
+The evaluation metrics for the model is available in __Table 19__. The model was run against a 70% - 30% training and test set, then the selected model was run against the full data set. The test set accuracy was `r round(xgbcm_ht$overall[1] * 100, 2)`%, while the accuracy on the full data set was `r round(xgb_cm_ht_all$overall[1] * 100, 2)`%.
+
+```{r xgb_results, echo = FALSE}
+
+kable(xgb_results, caption = "XGBoost Model Results", booktabs = TRUE) %>% 
+        kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
+
+```
+
+The Variable Importance plot is available in __Figure 17__. Note how the variable *Hist_2_150_2_Entropy* plays a very significant role, followed by *Hist_2_30_2_Entropy*.
+
+```{r xgb_variable_imp, echo = FALSE, out.width = '350px', fig.cap = 'XGBoost Variable Importance', fig.align = "center", fig.pos = 'H'}
+
+# view variable importance plot
+mat <- xgb.importance (feature_names = colnames(new_tr), model = xgb_ht)
+
+ggplot(mat[1:10], aes(x = reorder(Feature, Gain), Gain)) +
+        geom_bar(stat = "identity", aes(fill = Feature)) + 
+        coord_flip() + 
+        guides(fill=FALSE) + 
+        ggtitle("XGBoost Model Variable Importance - Label") +
+        xlab("Variables") +
+        ylab("")
+
+xgb.ROC <- roc(labels_all, xgb_pred_ht_all)
+xgb.auc <- auc(xgb.ROC)
+
+```
+
+The AUC in __Figure 18__ of `r xgb.auc` further illustrates how individual metrics can be deceiving. Note how this AUC is less than that seen from the Random Forest model, even though the model is performing much better.
+
+The confusion matrix in __Table 20__ shows that the model incorrectly predicts Pneumoconiosis in 20 patients when the disease is not actually present and fails to predict Pneumoconiosis in only 29 patients when the disease actaully is present.
+
+```{r xgb_table, echo = FALSE}
+
+kable(xgb_cm_ht_all$table, caption = "XGB Model Confusion Matrix", booktabs = TRUE) %>% 
+        kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
+
+```
+
+```{r xgb_roc, echo = FALSE, out.width = '350px', fig.cap = 'XGBoost ROC Curve', fig.align = "center", fig.pos = 'H'}
+
+plot(xgb.ROC, col = 'blue', main = paste('XGB - Area under the curve (AUC):', round(auc(xgb.ROC),2)))
+
+```

@@ -8,7 +8,7 @@ $$f(x)=\sum_{i}^{N}\alpha _{i}y_{i} exp(-\left \| x-x_{i} \right \|^{2}/2\sigma 
 
 The RBF has two tuning parameters available through the 'caret' package. A wider or softer margin is created when C (cost) is decreased and that for larger values of $\sigma$ the decision boundary tends to be smoother and more flexible. It also tends to misclassify more often, but reduces the likelihood of overfitting the model [@wang_2014].
 
-__Figure 9__ provides an example of the non-linear decision boundary. Note that the separation is less than ideal, but that is to be expected since these variables were selected at random and represent only part of the models separation capabilities. Unforunately, it is not possible to plot the separation planes in 16-dimensions.
+__Figure 10__ provides an example of the non-linear decision boundary. Note that the separation is less than ideal, but that is to be expected since these variables were selected at random and represent only part of the models separation capabilities. Unforunately, it is not possible to plot the separation planes in 16-dimensions.
 
 ```{r svm_bound_plot, echo = FALSE, out.width = '350px', fig.cap = 'Decision Boundaries', fig.align = "center", fig.pos = 'H'}
 
@@ -148,7 +148,7 @@ svm.auc <- auc(svm.ROC)
 
 ```
 
-The AUC in __Figure 10__ of `r svm.auc` is a slight improvement over the best GLM model.  
+The AUC in __Figure 11__ of `r svm.auc` is a slight improvement over the best GLM model.  
 
 ```{r svm_roc, echo = FALSE, out.width = '350px', fig.cap = 'SVM ROC Curve', fig.align = "center", fig.pos = 'H'}
 

@@ -88,4 +88,9 @@ options(width = 400, kableExtra.latex.load_packages = FALSE, knitr.table.format 
 
 \newpage
 
+```{r child = 'Chapters/appendixc.Rmd'}
+``` 
+
+\newpage
+
 # References

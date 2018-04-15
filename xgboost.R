@@ -4,6 +4,7 @@ library(data.table)
 library(dplyr)
 library(xgboost)
 library(caret)
+library(ggplot2)
 
 
 ###############################################################################
@@ -95,7 +96,7 @@ xgbcv$best_iteration
 # first default - model training
 xgb_ht <- xgb.train (params = params
                      ,data = dtrain
-                     ,nrounds = 63
+                     ,nrounds = 41
                      ,watchlist = list(val = dtest, train = dtrain)
                      ,print_every_n = 10
                      ,early_stopping_rounds = 10
@@ -115,7 +116,6 @@ saveRDS(xgb_ht, "xgb_ht.rds")
 saveRDS(xgbpred_ht, "xgbpred_ht.rds")
 xgb_htt <- readRDS("xgb_ht.rds")
 
-library(ggplot)
 # view variable importance plot
 mat <- xgb.importance (feature_names = colnames(new_tr), model = xgb_ht)
 
@@ -129,17 +129,10 @@ ggplot(mat[1:10], aes(x = reorder(Feature, Gain), Gain)) +
 
 ## predict on full data set 
 # get results for full data set
-# model prediction
 xgb_pred_ht_all <- predict(xgb_ht, adata)
 
 # confusion matrix
 xgb_cm_ht_all <- caret::confusionMatrix(xgb_pred_ht_all, labels_all, mode = 'everything')
-
-# Convert predictions to hospital
-xgb_pred_ht_all <- as.factor(xgb_pred_ht_all)
-xgb_pred_ht_all <- factor(xgb_pred_ht_all, 
-                          levels = c(0,1), 
-                          labels = levels(use_data$Label2))
 
 p <- xgb.plot.multi.trees(model = xgb_ht, 
                           features_keep = 3)

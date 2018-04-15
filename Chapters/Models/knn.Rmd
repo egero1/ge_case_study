@@ -145,7 +145,7 @@ knn.auc <- auc(knn.ROC)
 
 ```
 
-The AUC in __Figure 11__ of `r knn.auc` shows that the model is performing quite well. Recall that the AUC of a perfect model is 1.00.
+The AUC in __Figure 12__ of `r knn.auc` shows that the model is performing quite well. Recall that the AUC of a perfect model is 1.00.
 
 ```{r knn_roc, echo = FALSE, out.width = '350px', fig.cap = 'kNN ROC Curve', fig.align = "center", fig.pos = 'H'}
 
@@ -153,7 +153,7 @@ plot(knn.ROC, col = 'blue', main = paste('kNN - Area under the curve (AUC):', ro
 
 ```
 
-The plot in __Figure 12__ shows how the AUC changes as more neighbors are selected. The model performs best with `r knn.model.md$bestTune` neighbors and the performance degrades as more neighbors are added.
+The plot in __Figure 13__ shows how the AUC changes as more neighbors are selected. The model performs best with `r knn.model.md$bestTune` neighbors and the performance degrades as more neighbors are added.
 
 ```{r knn_neighbors, echo = FALSE, out.width = '350px', fig.cap = 'Values of k', fig.align = "center", fig.pos = 'H'}
 

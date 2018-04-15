@@ -4,8 +4,6 @@ Models will now be fitted using the three data sets discussed earlier. The task 
 
 Evaluation metrics for each of the models are included, but ROC and Variable Importance plots are included for only the be best performing model of each type.
 
-__In EDA dicuss how the data is combined into one data set since all labels are the same__
-
 ```{r child = 'Models/glm.RMD'}
 ```
 
@@ -27,4 +25,10 @@ __In EDA dicuss how the data is combined into one data set since all labels are 
 \FloatBarrier
 
 ```{r child = 'Models/rf.RMD'}
+```
+
+
+\FloatBarrier
+
+```{r child = 'Models/xgb.RMD'}
 ```

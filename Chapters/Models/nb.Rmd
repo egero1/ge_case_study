@@ -116,7 +116,7 @@ rownames(nb_results) <- NULL
 
 ```
 
-Unfortunately, Naive Bayes did not perform as well as expected, as seen in __Table 15__. The trimmed data set from the 'rfe' method provides the best accuracy at `r round(nb.cm.md$overall[1] * 100, 2)`%. The confusion matrix for this model is provided in __Table 16__ and the ROC plot is available in __Figure 13__. 
+Unfortunately, Naive Bayes did not perform as well as expected, as seen in __Table 15__. The trimmed data set from the 'rfe' method provides the best accuracy at `r round(nb.cm.md$overall[1] * 100, 2)`%. The confusion matrix for this model is provided in __Table 16__ and the ROC plot is available in __Figure 14__.
 
 The recall (sensitivity) for these models is the lowest that have been observed so far. While the type I errors of 112 are in line with other models, the type II (false negative) errors of 198 are quite high in comparison. It was suspected that the bimodal distribution of several variables was causing an issue, but removing them did not help the models' performance.
 

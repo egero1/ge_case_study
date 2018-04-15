@@ -1,3 +1,6 @@
 # Conclusion
 
-stuck with using loocv, normally would select a couple models based on experience and then tune those models.. try something else if that doesnt work... with loocv cant really tune models, just selecting the best from the results.
+Several models have been presented with varying results. While most models performed reasonably well, there is much that could be done to tune individual models for better performance. Adhering to the requirements of LOOCV limited such peformance improvements, but LOOCV did prove itself to be a useful tool in determining model performance.
+
+The XGradiant Boosting model provided an example of the performance that is possible with the data. The kNN and the Random Forest models both performed quite well, with the Random Forest winning by a small margin. However, if a preferred model were to be selected, the kNN might be a better choice since it is much easier to explain to a business user.
+

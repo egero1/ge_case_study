@@ -23,6 +23,8 @@ library(klaR)
 library(gridExtra)
 library(parallel)
 library(doParallel)
+library(data.table)
+library(xgboost)
 
 decisionplot <- function(model, data, class = NULL, predict_type = "class",
                          resolution = 100, showgrid = TRUE, ...) {
@@ -790,224 +792,159 @@ saveRDS(rf.model.ud, "Models/rf_use_data.rds")
 saveRDS(rf.model.md, "Models/rf_model_data.rds")
 saveRDS(rf.model.lc, "Models/rf_use_data_lc.rds")
 
-
-##################################Figure out what to use here
-
 ###############################################################################
-# XGBoost - LOOCV  
-# https://machinelearningmastery.com/tune-machine-learning-algorithms-in-r/
-# https://www.analyticsvidhya.com/blog/2016/12/practical-guide-to-implement-machine-learning-with-caret-package-in-r-with-practice-problem/
+## XGradient Boost Models 
 ###############################################################################
 
-# Enable parallel processing and reserve resources
-cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
-registerDoParallel(cluster)
+# create data table data frames
+setDT(use_data)
+setDT(trainData) 
+setDT(testData)
 
-# Set up training conditions - must use LOOCV
-fitControl <- trainControl(method = "LOOCV"
-                           ,classProbs = TRUE 
-                           ,summaryFunction = twoClassSummary
-                           ,savePredictions = 'final'
-                           ,allowParallel = TRUE
-                           ,verboseIter = TRUE)
+# using one hot encoding
+labels_all <- use_data$Label
+labels <- trainData$Label
+ts_label <- testData$Label
+new_all <- model.matrix(~.+0, data = use_data[,-c("Label"), with = F]) 
+new_tr <- model.matrix(~.+0, data = trainData[,-c("Label"), with = F]) 
+new_ts <- model.matrix(~.+0, data = testData[,-c("Label"), with = F])
 
-# set up the cross-validated hyper-parameter search
-xgb_grid = expand.grid(nrounds = 2
-                       ,max_depth = c(5, 10, 15)
-                       ,eta = c(0.01, 0.001, 0.0001)
-                       ,gamma = c(1, 2, 3)
-                       ,colsample_bytree = c(0.4, 0.7, 1.0)
-                       ,min_child_weight = c(0.5, 1, 1.5)
-                       ,subsample = 1)
+# convert factor to numeric
+labels_all <- as.numeric(labels_all) - 1
+labels <- as.numeric(labels) - 1
+ts_label <- as.numeric(ts_label) - 1
 
-# Full data set
-set.seed(1234)
-xgb.model.ud <- caret::train(Label ~.
-                              ,data = use_data
-                              ,method = 'xgbTree'
-                              ,trControl = fitControl
-                              ,tuneGrid = xgb_grid
-                              ,metric = "ROC")
+# preparing matrix 
+adata <- xgb.DMatrix(data = new_all, label = labels_all) 
+dtrain <- xgb.DMatrix(data = new_tr, label = labels) 
+dtest <- xgb.DMatrix(data = new_ts, label = ts_label)
 
-xgb.cm.ud <- caret::confusionMatrix(xgb.model.ud$pred$pred, xgb.model.ud$pred$obs)
+# Set parameters
+params <- list(booster = "gbtree"
+               ,objective = "multi:softmax"
+               ,num_class = 2
+               ,eta = 0.3
+               ,gamma = 0
+               ,max_depth = 6
+               ,min_child_weight = 1
+               ,subsample = 1
+               ,colsample_bytree = 1)
 
-# Get the performance metrics from the model and save for comparison
-performance <- getTrainPerf(nnet.model.ud)
+xgbcv <- xgb.cv(params = params
+                ,data = dtrain
+                ,nrounds = 200
+                ,nfold = 10
+                ,showsd = TRUE
+                ,stratified = TRUE
+                ,print_every_n = 10
+                ,early_stopping_rounds = 20
+                ,maximize = FALSE
+                ,eval_metric = "mlogloss")
+
+xgbcv$best_iteration
+
+# first default - model training
+xgb_ht <- xgb.train (params = params
+                     ,data = dtrain
+                     ,nrounds = 41
+                     ,watchlist = list(val = dtest, train = dtrain)
+                     ,print_every_n = 10
+                     ,early_stopping_rounds = 10
+                     ,maximize = F 
+                     ,eval_metric = "mlogloss")
+
+# model prediction
+xgbpred_ht <- predict(xgb_ht, dtest)
+
+# confusion matrix
+xgbcm_ht <- caret::confusionMatrix(xgbpred_ht, ts_label, mode = 'everything')
+
 model_results <- rbind(model_results
-                       ,data.frame(Model = 'Neural Network'
-                                   ,Data = 'Full'
-                                   ,Accuracy = nnet.cm.ud$overall[1]
-                                   ,Kappa = nnet.cm.ud$overall[2]
-                                   ,F1 = nnet.cm.ud$byClass[7]
-                                   ,ROC = performance[,1]
-                                   ,Sensitivity = performance[,2]
-                                   ,Specificity = performance[,3]))
+                       ,data.frame(Model = 'X-Gradient Boost'
+                       ,Data = 'Training Set'
+                       ,Accuracy = xgbcm_ht$overall[1]
+                       ,Sensitivity = xgbcm_ht$byClass[1]
+                       ,Specificity = xgbcm_ht$byClass[2]
+                       ,Presicion = xgbcm_ht$byClass[5]
+                       ,Kappa = xgbcm_ht$overall[2]
+                       ,F1 = xgbcm_ht$byClass[7]
+                       ,ROC = NA))
 
-rownames(model_results) <- NULL
-###########################################################################
-# Set up training conditions - must use LOOCV
-fitControl <- trainControl(method = "repeatedcv"
-                           ,number = 10
-                           ,repeats = 5
-                           ,classProbs = TRUE 
-                           ,summaryFunction = twoClassSummary
-                           ,savePredictions = 'final'
-                           ,allowParallel = TRUE
-                           ,verboseIter = TRUE)
+# save models and results
+saveRDS(xgb_ht, "xgb_ht.rds")
+saveRDS(xgbpred_ht, "xgbpred_ht.rds")
+xgb_htt <- readRDS("xgb_ht.rds")
 
-# set up the cross-validated hyper-parameter search
-xgb_grid = expand.grid(nrounds = 2
-                       ,max_depth = c(5, 10, 15)
-                       ,eta = c(0.01, 0.001, 0.0001)
-                       ,gamma = c(1, 2, 3)
-                       ,colsample_bytree = c(0.4, 0.7, 1.0)
-                       ,min_child_weight = c(0.5, 1, 1.5)
-                       ,subsample = 1)
+# view variable importance plot
+mat <- xgb.importance (feature_names = colnames(new_tr), model = xgb_ht)
 
-# Full data set
-set.seed(1234)
-xgb.model.ud.cv <- caret::train(Label ~.
-                             ,data = trainData
-                             ,method = 'xgbTree'
-                             ,trControl = fitControl
-                             ,tuneGrid = xgb_grid
-                             ,metric = "ROC")
+ggplot(mat[1:10], aes(x = reorder(Feature, Gain), Gain)) +
+        geom_bar(stat = "identity", aes(fill = Feature)) + 
+        coord_flip() + 
+        guides(fill=FALSE) + 
+        ggtitle("XGBoost Model Variable Importance - Label") +
+        xlab("Variables") +
+        ylab("")
 
-xgb.cm.ud.cv <- caret::confusionMatrix(xgb.model.ud.cv$pred$pred, xgb.model.ud.cv$pred$obs)
+## predict on full data set 
+# get results for full data set
+xgb_pred_ht_all <- predict(xgb_ht, adata, response = 'raw')
 
-# Get the performance metrics from the model and save for comparison
-performance <- getTrainPerf(nnet.model.cv)
+# confusion matrix
+xgb_cm_ht_all <- caret::confusionMatrix(xgb_pred_ht_all, labels_all, mode = 'everything')
+
 model_results <- rbind(model_results
-                       ,data.frame(Model = 'Neural Network'
-                                   ,Data = 'Full'
-                                   ,Accuracy = nnet.cm.cv$overall[1]
-                                   ,Kappa = nnet.cm.cv$overall[2]
-                                   ,F1 = nnet.cm.cv$byClass[7]
-                                   ,ROC = performance[,1]
-                                   ,Sensitivity = performance[,2]
-                                   ,Specificity = performance[,3]))
+                       ,data.frame(Model = 'X-Gradient Boost'
+                                   ,Data = 'Training Set'
+                                   ,Accuracy = xgb_cm_ht_all$overall[1]
+                                   ,Sensitivity = xgb_cm_ht_all$byClass[1]
+                                   ,Specificity = xgb_cm_ht_all$byClass[2]
+                                   ,Presicion = xgb_cm_ht_all$byClass[5]
+                                   ,Kappa = xgb_cm_ht_all$overall[2]
+                                   ,F1 = xgb_cm_ht_all$byClass[7]
+                                   ,ROC = NA))
 
-rownames(model_results) <- NULL
+p <- xgb.plot.multi.trees(model = xgb_ht, 
+                          features_keep = 3)
+print(p)
 
-# Disable parallel processing and release resources
-stopCluster(cluster)
-registerDoSEQ()
+#####################################################
+names <- names(use_data)
+classes<-sapply(use_data, class)
+for(name in names[classes == 'numeric'])
+{
+        hist(use_data[,name], main = colnames[name]) 
+}
 
-nnet.ROC <- roc(nnet.model$pred$obs, nnet.model$pred$Normal)
-plot(nnet.ROC, col = "blue")
-auc(nnet.ROC)
-
-# Save models in case we want to review them later
-saveRDS(model_results, "model_results.rds")
-saveRDS(nnet.model, "Models/nnet_use_data.rds")
-saveRDS(nnet.model, "Models/nnet_use_data_lc.rds")
-saveRDS(nnet.model, "Models/nnet_model_data.rds")
-
-
-# play with this
-vars <- model_data[,c('Hist_2_150_2_Entropy', 'Hist_2_30_2_Entropy', 'Label')]
-fitControl = trainControl(classProbs = TRUE)
-
-set.seed(123)
-impVars <- train(Label ~ .,
-                 data = vars,
-                 method = "svmRadial",
-                 importance = TRUE,
-                 trControl = fitControl)
-
-decisionplot(model = impVars, data = vars, class = "Label", predict_type = "raw")
+library(ggplot2)
+library(reshape2)
+ggplot(use_data[c(1, 4, 5, 8, 24)], aes(x=value)) + 
+        geom_histogram() + 
+        facet_wrap(~variable)
 
 
-###############################################################################
-# Nueral Network - LOOCV  
-# https://machinelearningmastery.com/tune-machine-learning-algorithms-in-r/
-# https://www.analyticsvidhya.com/blog/2016/12/practical-guide-to-implement-machine-learning-with-caret-package-in-r-with-practice-problem/
-###############################################################################
+par(mfrow = c(2,2))
+for (i in 1:dim(use_data[c(4, 5, 8, 24)])[2]) {
+        hist(use_data[,i], main = colnames(use_data)[i], xlab = "")
+}
 
-# Enable parallel processing and reserve resources
-cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
-registerDoParallel(cluster)
 
-# Set up training conditions - must use LOOCV
-fitControl <- trainControl(method = "LOOCV"
-                           ,classProbs = TRUE 
-                           ,summaryFunction = twoClassSummary
-                           ,savePredictions = 'final'
-                           ,allowParallel = TRUE)
 
-# Full data set
-set.seed(1234)
-nnet.model.ud <- caret::train(Label ~.
-                              ,data = use_data
-                              ,method = 'nnet'
-                              ,trControl = fitControl
-                              ,metric = "ROC")
 
-nnet.cm.ud <- caret::confusionMatrix(nnet.model.ud$pred$pred, nnet.model.ud$pred$obs)
 
-# Get the performance metrics from the model and save for comparison
-performance <- getTrainPerf(nnet.model.ud)
-model_results <- rbind(model_results
-                       ,data.frame(Model = 'Neural Network'
-                                   ,Data = 'Full'
-                                   ,Accuracy = nnet.cm.ud$overall[1]
-                                   ,Sensitivity = performance[,2]
-                                   ,Specificity = performance[,3]
-                                   ,Presicion = nnet.cm.ud$byClass[5]
-                                   ,Kappa = nnet.cm.ud$overall[2]
-                                   ,F1 = nnet.cm.ud$byClass[7]
-                                   ,ROC = performance[,1]))
+library(gridExtra)
+plots <- list(0)
+for (var in 1:39) {
+        p <- ggplot(data = use_data, aes(x = '', y = use_data[,var])) + 
+                geom_boxplot(color='red', fill='orange', alpha = 0.2) +
+                labs(title = paste(colnames(use_data[var]))) +
+                ylab('Boxplot') +
+                xlab('') + 
+                coord_cartesian(ylim = c(min(use_data[,var]), max(use_data[,var])))
+        print(p)
+}
 
-rownames(model_results) <- NULL
-###########################################################################
-# Set up training conditions - must use LOOCV
-fitControl <- trainControl(method = "repeatedcv"
-                           ,number = 10
-                           ,repeats = 5
-                           ,classProbs = TRUE 
-                           ,summaryFunction = twoClassSummary
-                           ,savePredictions = 'final'
-                           ,allowParallel = TRUE
-                           ,verboseIter = TRUE)
-
-nnetGrid <-  expand.grid(size = seq(from = 1, to = 10, by = 1),
-                         decay = seq(from = 0.1, to = 0.5, by = 0.1))
-
-# Full data set
-set.seed(1234)
-nnet.model.cv <- caret::train(Label ~.
-                              ,data = model_data
-                              ,method = 'nnet'
-                              ,trControl = fitControl
-                              ,tuneGrid = nnetGrid
-                              ,metric = "ROC")
-
-nnet.cm.cv <- caret::confusionMatrix(nnet.model.cv$pred$pred, nnet.model.cv$pred$obs)
-
-# Get the performance metrics from the model and save for comparison
-performance <- getTrainPerf(nnet.model.cv)
-model_results <- rbind(model_results
-                       ,data.frame(Model = 'Neural Network'
-                                   ,Data = 'Full'
-                                   ,Accuracy = nnet.cm.cv$overall[1]
-                                   ,Kappa = nnet.cm.cv$overall[2]
-                                   ,F1 = nnet.cm.cv$byClass[7]
-                                   ,ROC = performance[,1]
-                                   ,Sensitivity = performance[,2]
-                                   ,Specificity = performance[,3]))
-
-rownames(model_results) <- NULL
-
-# Disable parallel processing and release resources
-stopCluster(cluster)
-registerDoSEQ()
-
-nnet.ROC <- roc(nnet.model$pred$obs, nnet.model$pred$Normal)
-plot(nnet.ROC, col = "blue")
-auc(nnet.ROC)
-
-# Save models in case we want to review them later
-saveRDS(model_results, "model_results.rds")
-saveRDS(nnet.model, "Models/nnet_use_data.rds")
-saveRDS(nnet.model, "Models/nnet_use_data_lc.rds")
-saveRDS(nnet.model, "Models/nnet_model_data.rds")
+for (var in 1:39) {
+        #grid.arrange(plots[[var]], plots[[var+1]], ncol = 2)
+        print(plots[[v]])
+}

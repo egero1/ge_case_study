@@ -127,7 +127,7 @@ kable(rf_results, caption = "Random Forest Model Results", booktabs = TRUE) %>%
 
 \FloatBarrier
 
-__Figure 14__ provides a Variable Importance plot. This plot shows the variables that were most impactful in the model. One disadvantage of Random Forests, as well as many machine learning alogrithms, is that they operate as a 'black box' so it is difficult to understand how the model is making predictions.
+__Figure 15__ provides a Variable Importance plot. This plot shows the variables that were most impactful in the model. One disadvantage of Random Forests, as well as many machine learning alogrithms, is that they operate as a 'black box' so it is difficult to understand how the model is making predictions.
 
 The variables are listed from the top down in order of importance as determined by the Mean Decrease Gini. Variables that result in nodes with higher purity have a higher decrease in Gini coefficient. The Variable Importance plot can also be used for feature selection. Note the break after *Hist_1_180_2_StdDev*. *Hist_2_150_2_Mean* and the variables below it are not contributing as much to the model, so it is possible that removing them would not have a huge impact on the model's performance.
 
@@ -157,7 +157,7 @@ rf.auc <- auc(rf.ROC)
 
 ```
 
-As previosly noted, AUC in __Figure 15__ of `r rf.auc` is slightly misleading. While the specificity is quite good, the sensitivety still shows some issues. If one were to evaluate the model based on soley on the AUC, they might believe the model is performing much better than it actually is.
+As previosly noted, AUC in __Figure 16__ of `r rf.auc` is slightly misleading. While the specificity is quite good, the sensitivety still shows some issues. If one were to evaluate the model based on soley on the AUC, they might believe the model is performing much better than it actually is.
 
 ```{r rf_roc, , echo = FALSE, out.width = '350px', fig.cap = 'RF ROC Curve', fig.align = "center", fig.pos = 'H'}
 
