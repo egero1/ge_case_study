@@ -1,6 +1,6 @@
 \subsection{Random Forest Models}
 
-The Random Forest algoritm is also quite popular and can be used for regression or classification. They are known for above average results since they encompass all the benefits of decision trees, and they are not prone to over-fitting. 
+The Random Forest [RF] algoritm is also quite popular and can be used for regression or classification. They are known for above average results since they encompass all the benefits of decision trees, and they are not prone to over-fitting. 
 
 For classification, a Random Forest will grow many decision trees. Each tree provides a classification which is considered a vote. The alogrithm then chooses the classification that has the most votes from all the trees in the forest.
 

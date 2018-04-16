@@ -1,0 +1,7 @@
+\subsection{Leave One Out Cross Validation}
+
+In leave one out cross validation [LOOCV] each observation is used as a validation set and the remaining n-1 observations are used as the training set. The model is fit to the training set and validated against the individual response from the validation set. This process is repeated until each observation has been used as the validation set.
+
+LOOCV offers some advantages and disadvantages. Some advantages of the LOOCV approach include the lack of randomness in the data, and reduced bias. Since all observations are used to both train and test the model, there is no chance of data being excluded from the process. For this reason, LOOCV will always provide the same results, no matter how many times the model is run, provided the data set does not change. Additionally, using n- 1 observations to train the model reduces the bias. The benefit is that there is a reduction in the over-estimation of the test error that is seen with other cross validation methods.
+
+As for the disadvantages, LOOCV can be computationally expense since the model needs to be fit and run once for each row in the data set. More complex models will require additional time to run with LOOCV. Lastly, even though the individual iteration's test error is unbiased, LOOCV has high variability since only one observation is used in the validation set for prediction.

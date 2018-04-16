@@ -1,6 +1,6 @@
 \subsection{Naive Bayes Models} 
 
-The Naive Bayes classifier is a simple and fast learner that is known to provide excellent results. It is based on Bayes' Theorem which provides a way of calculating posterior probability P(c|x) from P(c), P(x) and P(x|c). The model works by first creating a frequency table from the data, then using that frequency table to calculate the probabilities. The Naive Bayesian equation (below) is then used to calcuate the posterior probability for each class, selecting the class with the highest probability [@ray_2017_nb].
+The Naive Bayes [NB] classifier is a simple and fast learner that is known to provide excellent results. It is based on Bayes' Theorem which provides a way of calculating posterior probability P(c|x) from P(c), P(x) and P(x|c). The model works by first creating a frequency table from the data, then using that frequency table to calculate the probabilities. The Naive Bayesian equation (below) is then used to calcuate the posterior probability for each class, selecting the class with the highest probability [@ray_2017_nb].
 
 $$P(c|x) = \frac{P(x|c)P(c)}{P(x)}$$
 

@@ -1,4 +1,4 @@
-# Models
+# Modeling
 
 Models will now be fitted using the three data sets discussed earlier. The task is to find the best model, using leave one out cross validation, that maximizes the identification of true positives and true negatives while minimizing the false positives and false negatives. The 'caret' package in R will be used for all model building. This package acts as a wrapper for other R packages. While using the 'caret' package does incur some overhead, it offers many benefits. These benefits include a consist method for building models of various types, a well formatted and thorough confusion matrix, variable importance functionality and the package itself is very well documented. Another benefit of using the 'caret' package is that with the LOOCV method, both the observed value and the prediction are saved within the resulting model object and can be easily retrieved.
 

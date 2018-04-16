@@ -64,6 +64,11 @@ options(width = 400, kableExtra.latex.load_packages = FALSE, knitr.table.format 
 
 \FloatBarrier
 
+```{r child = 'Chapters/loocv.Rmd'}
+```
+
+\FloatBarrier
+
 ```{r child = 'Chapters/models.Rmd'}
 ```
 

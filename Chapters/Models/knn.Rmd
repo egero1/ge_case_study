@@ -1,6 +1,6 @@
 \subsection{k-Nearest Neighbor} 
 
-The k-Nearest Neighbor (kNN) algorithm is one of the simplest, yet most popular classifiers. It is non-parametric, meaning it makes no assumptions about the distribution of the data. It is also a lazy algorithm, meaning the training phase is very minimal. The algorithm performs classification through a majority vote of its k nearest neighbors, hence the name [@bronshtein_2017]
+The k-Nearest Neighbor [kNN] algorithm is one of the simplest, yet most popular classifiers. It is non-parametric, meaning it makes no assumptions about the distribution of the data. It is also a lazy algorithm, meaning the training phase is very minimal. The algorithm performs classification through a majority vote of its k nearest neighbors, hence the name [@bronshtein_2017]
 
 Some of the advantages of kNN include insensitivity to outliers, high accuracy, and useful for classification and regression. However, kNN has high memory requirements and the data should be centered and scale prior to fitting the model.
 

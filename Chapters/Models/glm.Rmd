@@ -1,6 +1,6 @@
 \subsection{Generalized Linear Model} 
 
-Generalized Linear Models are an extension of linear regression that allow for the response variable to have a non-normal distribution. Having a binary response variable, the relationship between the predictors and the response variable is not linear, so the logit link function is used to provide a transformation and ensure that the response is constrained between 0 and 1. The logit function is defined as: $$logit(p) =log\frac{p}{1-p}$$
+Generalized Linear Models [GLM] are an extension of linear regression that allow for the response variable to have a non-normal distribution. Having a binary response variable, the relationship between the predictors and the response variable is not linear, so the logit link function is used to provide a transformation and ensure that the response is constrained between 0 and 1. The logit function is defined as: $$logit(p) =log\frac{p}{1-p}$$
 
 ```{r glm_model, echo = FALSE}
 
