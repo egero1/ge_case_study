@@ -54,7 +54,7 @@ use_data <- full %>%
 
 # Introduction and Problem Statement
 
-Pneumoconiosis, also known as "black lung disease", is an occupational lung disease caused by dusts that are breathed in and then deposited deep in the lungs causing damage [@AmericanLungAssociation2018]. It is often found in employees working in the mining or agricultural industries. There is no cure for Pneumoconiosis, so early detection is vital for proper treatment. 
+Pneumoconiosis, also known as "black lung disease", is an occupational lung disease caused by dusts that are inhaled and deposited deep in the lungs causing damage [@AmericanLungAssociation2018]. It is often found in individuals working in the mining or agricultural industries. There is no cure for Pneumoconiosis, so early detection is vital for proper treatment. 
 
 The traditional method for detecting Pneumoconiosis requires trained doctors to review chest x-rays for abnormalities that may indicate the disease is present. However, due to the lack of trained personnel and the large number of patients waiting to be screened, a reliable and automated process for early detection is desired.
 

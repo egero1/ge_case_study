@@ -129,7 +129,7 @@ kable(glm_results, caption = "GLM Model Results", booktabs = TRUE) %>%
         kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
 ```
 
-The confusion matrix for this model is available in __Table 9__. While the model is not performing poorly, it is only slightly better than the naive model and predicts Pneumoconiosis in 105 patients when no disease is actually present; this is known as at type I error. The model also fails to predict the presence of Pneumoconiosis in 139 patients; this is a type II error.
+The confusion matrix for this model is available in __Table 9__. While the model is not performing poorly, it is only slightly better than the naive model and predicts Pneumoconiosis in 105 patients when no disease is actually present; this is known as a type I error. The model also fails to predict the presence of Pneumoconiosis in 139 patients; this is a type II error.
 
 ```{r glm_table, echo = FALSE}
 
@@ -141,7 +141,7 @@ glm.auc <- auc(glm.ROC)
 
 ```
 
-The AUC in __Figure 9__ of `r glm.auc` is slightly misleading given a model accuracy of `r round(glm.cm.ud$overall[1] * 100, 2)`%. For classification, no single evaluation metric tells the whole story, so it is always best to review several. The 'confusionMatrix' function in the 'caret' package makes generating all necessary evaluation metrics relatively easy.
+The AUC in __Figure 9__ of `r glm.auc` is slightly misleading given a model accuracy of `r round(glm.cm.ud$overall[1] * 100, 2)`%. For classification, no single evaluation metric tells the whole story, so it is always best to review several. The 'confusionMatrix' function in the 'caret' package simplifies the process of generating all necessary evaluation metrics.
 
 ```{r glm_roc, echo = FALSE, out.width = '350px', fig.cap = 'GLM ROC Curve', fig.align = "center", fig.pos = 'H'}
 
@@ -149,7 +149,7 @@ plot(glm.ROC, col = 'blue', main = paste('GLM - Area under the curve (AUC):', ro
 
 ```
 
-Lastly, since GLM is extension of linear regression, the regression coefficients are available for the model in __Table 10__. To conserve space, only the first 10 are listed here. The full list of coefficients may be generated for further review if required.
+Lastly, since GLM is extension of linear regression, the regression coefficients are available for the model in __Table 10__. To conserve space, only the first 10 are listed here. The full list of coefficients may be providedd for further review if requested. Note the rather large negative intercept and the small role that variables like _Hist_0_0_0_Mean_, and _Hist_0_0_0_Kurtosis_ play.
 
 ```{r glm_coefficients, echo = FALSE}
 # Print model coefficients

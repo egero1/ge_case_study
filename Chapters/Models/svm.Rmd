@@ -1,14 +1,14 @@
 \subsection{Support Vector Machine} 
 
-A Support Vector Machine [SVM] is a supervised machine learning algorithm defined by a separating hyperplane. In this algorithm, each data element is plotted in n-dimensional space, where is the number of features. Then classification is performed by finding the hyperplane that best differentiates the classes[@ray_2017]. SVM is a very popular modeling techhinque that often provides great results with very little tuning.
+A Support Vector Machine [SVM] is a supervised machine learning algorithm defined by a separating hyperplane. In this algorithm, each data element is plotted in _n_ - dimensional space, where _n_ is the number of features. Then classification is performed by finding the hyperplane that best differentiates the classes [@ray_2017]. SVM is a very popular modeling techhinque that often provides great results with very little tuning.
 
-A radial basis function kernel (RBF) was selected to classify since the data is not linearly separable. The RBF is defined as:
+A radial basis function kernel [RBF] was selected as the classifier since the data is not linearly separable. The RBF is defined as:
 
 $$f(x)=\sum_{i}^{N}\alpha _{i}y_{i} exp(-\left \| x-x_{i} \right \|^{2}/2\sigma ^2) + b$$
 
 The RBF has two tuning parameters available through the 'caret' package. A wider or softer margin is created when C (cost) is decreased and that for larger values of $\sigma$ the decision boundary tends to be smoother and more flexible. It also tends to misclassify more often, but reduces the likelihood of overfitting the model [@wang_2014].
 
-__Figure 10__ provides an example of the non-linear decision boundary. Note that the separation is less than ideal, but that is to be expected since these variables were selected at random and represent only part of the models separation capabilities. Unforunately, it is not possible to plot the separation planes in 16-dimensions.
+__Figure 10__ provides an example of the non-linear decision boundary. Note that the separation is less than ideal, but that is to be expected since these variables were selected at random and represent only part of the models separation capabilities. Unforunately, it is not possible to plot the separation planes in 16 - dimensions.
 
 ```{r svm_bound_plot, echo = FALSE, out.width = '350px', fig.cap = 'Decision Boundaries', fig.align = "center", fig.pos = 'H'}
 
@@ -136,11 +136,13 @@ kable(svm_results, caption = "SVM Model Results", booktabs = TRUE) %>%
         kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
 ```
 
+\FloatBarrier
+
 The confusion matrix for this model is available in __Table 12__. The model predicts Pneumoconiosis in 83 patients when no disease is actually present, and fails to predict the presence of Pneumoconiosis in 129 patients. 
 
 ```{r svm_table, echo = FALSE}
 
-kable(glm.cm.ud$table, caption = "SVM Model Confusion Matrix", booktabs = TRUE) %>% 
+kable(svm.cm.ud$table, caption = "SVM Model Confusion Matrix", booktabs = TRUE) %>% 
         kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
 
 svm.ROC <- roc(svm.model.ud$pred$obs, svm.model.ud$pred$Normal)

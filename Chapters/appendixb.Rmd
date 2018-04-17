@@ -1,7 +1,7 @@
 \subsection{Histograms for Predictors} 
 
 
-```{r all_histograms, echo = FALSE, fig.width = 2.5, fig.height = 2, fig.show = 'hold', fig.align = 'center'}
+```{r all_histograms, echo = FALSE, fig.width = 2.4, fig.height = 2, fig.show = 'hold', fig.align = 'center'}
 
 for (i in 1:dim(use_data[-c(40, 41)])[2]) {
         hist(use_data[,i], main = colnames(use_data)[i], xlab = "")

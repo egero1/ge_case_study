@@ -1,6 +1,6 @@
 # Exploratory Data Analysis
 
-Note in __Table 1__ that the count of observations by segment differs. This indicates that not all of the `r length(unique(full$PatientNumMasked))` unique patients have observations for all lung segments. 
+Note in __Table 1__ that the count of observations by segment differs. This indicates that not all of the `r length(unique(full$PatientNumMasked))` unique patients have observations for all lung segments. Summary statistics, including the mean, median, standard deviation, mimimum values, maximum values and any missing data were reviewed. They are not included here due to the size of the table, but are availabe in **Appendix A.1**.
 
 ```{r observations, echo = FALSE}
 
@@ -34,12 +34,12 @@ checklabel <- ifelse(dim(checklabel)[1] == 0, 'no', dim(checklabel)[1])
 
 ```
 
-Since the lung images from each patient are broken into six segments and each tab contains the patient number and the label, it is possible that the labels for a patient do not match across the six segments. This is not much of an issue at the segment level, but it is important that it is taken into account if the data is rolled up or combined into a single table. If the label for any segement is 'Abnormal', then it should be considered that disease is present in the patient, regardless of the value of the other segment labels. It is confirmed that `r checklabel` patients have inconsistent label values.
+Since the lung images from each patient are broken into six segments and each tab contains the patient number and the label, it is possible that the labels for a patient do not match across the six segments. This is not much of an issue at the segment level, but it is important that it is taken into consideration if the data is rolled up or combined into a single table. If the label for any segement is 'Abnormal', then it should be considered that disease is present in the patient, regardless of the value of the other segment labels. Verification was performed to ensure that `r checklabel` patients have inconsistent label values. The categorical variable, _Position_, indicating the which lung segment the observations belong to was created and added to the data set for use in EDA and modeling.
 
 The prevalence rate for Pneumoconiosis in the data set is roughly 36%. The remaining 64% of patients are labeled as 'Normal', meaning no disease was detected during the initial analysis by the medical experts. 
 
 \subsection{Correlation - Predictors} 
-The correlation plot in __Figure 2__ shows that some of the predictors have strong correlations with each other. This requires further investigation as high correlation among predictors can cause instability in the model. Generally, when two variables are highly correlated, it is best to remove one since the second is not providing new information.
+The correlation plot in __Figure 2__ shows that some of the predictors are highly correlated with each other. This requires further investigation as high correlation among predictors can cause instability in the model. Generally, when two variables are highly correlated, it is best to remove one since the second is not providing new information.
 
 ```{r correlation, echo = FALSE, out.width = '450px', fig.cap = 'Correlation Matrix', fig.align = "center", fig.pos = 'H'}
 
@@ -85,7 +85,7 @@ corrplot(low_corr, method = "color", col = col(200),
 
 \subsection{Distribution - Predictors}
 
-__Figure 4__ provides examples of histograms for several of the predictors. Different modeling methods may make assumptions about the distributions of the independent variables, so it is good to review them. The distribution patterns seen here are common among the predictors in the dataset. Histograms for each of the predictors are available in **Appendix A.2**.
+__Figure 4__ provides examples of histograms for several of the predictors. Different modeling methods make assumptions about the distributions of the independent variables which could impact their relationship with the dependent variable, so it is good to review them. The distribution patterns seen here are common among the predictors in the dataset. Histograms for each of the predictors are available in **Appendix A.2**.
 
 ```{r distribution, echo = FALSE, out.width = '400px', fig.cap = 'Histograms', fig.align = "center", fig.pos = 'H'}
 
@@ -98,7 +98,7 @@ for (i in 1:dim(use_data[c(4, 5, 8, 24)])[2]) {
 
 \subsection{Outliers} 
 
-An outlier is an observation that is much smaller or larger than other values. It is important to identify potential outliers since they can skew or add bias to a model. The box plots __Figure 5__ provide an easy way to determine if outliers are present for a variable. The box plots show the minimum and maximum values on the vertical line, and the box which are the boundaries for the 1st and 3rd quartiles. The horizontal line in the middle of the box is the median. Note that in the box plot for *Hist_0_0_0_Kurtosis*, the median is very close to the 1st and 3rd quartiles. Box plots for all predictors were created and reviewed, but were not provided to conserve space. Most variables display patterns similar to those seen in __Figure 5__. The code to generate the remaining box plots is provided in **Appendix A.3**.  
+An outlier is an observation that is much smaller or larger than other values. It is important to identify potential outliers since they can skew or add bias to a model. The box plots __Figure 5__ provide an easy way to determine if outliers are present for a variable. The box plots show the minimum and maximum values on the vertical line, and the box which are the boundaries for the 1st and 3rd quartiles. The horizontal line in the middle of the box is the median. Note that in the box plot for *Hist_0_0_0_Kurtosis*, the median is very close to the 1st and 3rd quartiles. Box plots for all predictors were created and reviewed, but were not provided to conserve space. Most variables display patterns similar to those seen in __Figure 5__. Box plots for the remaining variables are provided in **Appendix A.3**.  
 
 The potential outliers are the individual data points that fall above or below the box, or 1st and 3rd quartiles. While these points can be influential, their full impact is difficult to determine in advance. The traditional processes for handling outliers includes removing them or capping their values. Since no information was provided on the valid range of each variable, it will be assumed that all data points are valid. Additionally, some modeling methods are less sensitive to outliers than others, so the potential impact of these points will be consisdered for each model.
 
@@ -122,11 +122,11 @@ grid.arrange(plots[[1]], plots[[2]], ncol = 2)
 
 \subsection{Evaluation Metrics}
 
-In order to understand how well the models are performing, or detecting Pneumoconiosis, various evaluation metrics will be considered. The most common evaluation metrics for classification include recall (sensitivity), specificity, precision, F1 and accuracy and are based on the rates of True Positive (TP), True Negative (TN), False Positive (FN) and False Negative (FN). 
+In order to understand how well the models are performing, or detecting Pneumoconiosis, various evaluation metrics will be considered. The most common evaluation metrics for classification include recall (sensitivity), specificity, precision, F1 and accuracy and are based on the rates of True Positive [TP], True Negative [TN], False Positive [FN] and False Negative [FN]. 
 
-Since the evaluation metrcis are defined in terms of TP, TN, FP and FN rates, definitions for each are provided. TP is when the model predicts 'Abnormal' and the patient actually does have Pneumoconiosis. TN is when the model predicts 'Normal' and the patient does not have Pneumoconiosis. FP is when the model predicts 'Abnormal, but the patient does not actually have Pneumoconiosis, and FN is when the model predicts 'Normal', but Pneumoconiosis is present. The following definitions can now be applied:
+Since the evaluation metrcis are defined in terms of TP, TN, FP and FN rates, definitions for each are provided. TP is when the model predicts 'Abnormal' and the patient actually does have Pneumoconiosis. TN is when the model predicts 'Normal' and the patient does not have Pneumoconiosis. FP is when the model predicts 'Abnormal, but the patient does not actually have Pneumoconiosis, and FN is when the model predicts 'Normal', but Pneumoconiosis is present. The following definitions may now be applied:
 
-### Evaluation metric definitions [@evalmetric]
+### Evaluation metric definitions 
 * Accuracy - $(\frac{1}{N})|\left \{ i|y_{i} = \hat{y}_{i} \right \}|$ = (TN + TP)/(TN + TP + FN + FP)
 * Recall (sensitivity) - $\frac{|\left \{ i|y_{i} = \hat{y}_{i}, \hat{y}_{i} = 1 \right \}|}{|\left \{ i|y_{i} = 1 \right \}|}$ = TP/(TP + FN)
 * Specificity - true negative rate = TN/(TN + FP)
@@ -136,7 +136,7 @@ Since the evaluation metrcis are defined in terms of TP, TN, FP and FN rates, de
     + observed accuracy = (TN + TP) / (TN + TP + FN + FP)
     + expected accuracy = (((TN + FP) * (TN + FN)) / (TN + TP + FN + FP) + (TN * (FP + TP))  / (TN + TP + FN + FP)) / (TN + TP + FN + FP)
 
-F1 takes both false positives and false negatives into account, so it can be more useful than accuracy alone, especially when there is an uneven class distribution. The Kappa statistic will also be used for model evaluation and comparison. The Kappa statistic compares the observed accuracy with the expected accuracy and takes random chance into account [@82187].
+F1 takes both false positives and false negatives into account, so it can be more useful than accuracy alone, especially when there is an uneven class distribution[@evalmetric]. The Kappa statistic will also be used for model evaluation and comparison. The Kappa statistic compares the observed accuracy with the expected accuracy and takes random chance into account [@82187].
 
 \subsection{Naive Model}
 
@@ -152,7 +152,7 @@ kable(tree.cm$table, caption = "Confusion Matrix", booktabs = TRUE) %>%
         kable_styling(font_size = 8, latex_options = c("striped", "hold_position"))
 ```
 
-The evaluation metrics for the naive model are provided in __Table 4__. The performance of this simple model is much better than expected, with an accuracy of 89% and an F1 of 85%. With a specificity of 95% and a sensitivity of 79%, the model is better at identifying true negatives than it is at identifying true positives.
+The evaluation metrics for the naive model are provided in __Table 4__. The performance of this simple model is much better than expected, with an accuracy of 89% and an F1 of 85%. With a specificity of 95% and a recall of 79%, the model is better at identifying true negatives than it is at identifying true positives. Note that precision, also known as the positive predictive value, is 90%.
 
 ```{r naive_cm1, echo = FALSE, , comment = NA}
 tree.combined <- data.frame(c(tree.cm$overall, tree.cm$byClass))
@@ -170,7 +170,7 @@ rpart.plot(tree)
 
 ```
 
-__Figure 7__ provides the Receiver Operating Characteristic curve (ROC). The ROC curve is a useful tool for evaluating predictive models and shows how well the model can distinguish between the true positives and the true negatives. The curve is the result of plotting the sensitivity against 1 - specificty. The further the curve is from the diagonal line, the better the model is at discriminating between positives and negatives. A ROC curve that hugs the diagonal line means the model's predictive capabilities is not much better than chance.
+__Figure 7__ provides the Receiver Operating Characteristic curve (ROC). The ROC curve is a useful tool for evaluating predictive models and shows how well the model can distinguish between the true positives and the true negatives. The curve is the result of plotting the recall against 1 - specificty. The further the curve is from the diagonal line, the better the model is at discriminating between positives and negatives. A ROC curve that hugs the diagonal line means the model's predictive capabilities are not much better than chance.
 
 Another useful statistic is the Area Under the Curve (AUC). This metric also measures how well the model predicts. An AUC of '1' indicates that the model perfectly separates the true positives from the true negatives, while an AUC of '0.5' means the model is not able to separate the true positives from the true negatives. ROC curves and AUC measures will also be used to evaluate the fitted models.
 
@@ -183,11 +183,11 @@ plot(tree.ROC, col = 'blue', main = paste('Area under the curve (AUC):', round(a
 
 \subsection{Variable Importance}
 
-It is always beneficial to reduce the complexity and dimensionality of a model whenever possible. One way to simplify a model is to reduce the number of predictors to include only those that actually provide value for the model. Including more predictors than needed increases the run-time for the model, and makes it prone to overfitting. An overfit model is one that fits the training data too well because it has learned the details and the noise. While it may provide excellent results on the training data, it typically performs poorly on new data.
+It is always beneficial to reduce the complexity and dimensionality of a model whenever possible. One way to simplify a model is to reduce the number of predictors to include only those that actually provide value for the model. Including more predictors than needed increases the run-time for the model, and makes it prone to overfitting. An overfit model is one that fits the training data too well because it has learned the details and the noise. While the model may provide excellent results on the training data, it typically performs poorly on new data.
 
 The 'caret' package in R provides the 'rfe' function for recursive feature elimination which is a simple backwards selection process to identify the best predictors. The function implements backwards selection of predictors based on predictor importance ranking. The predictors are ranked and the less important ones are sequentially eliminated prior to modeling [@kuhn]. The goal is to find a subset of predictors that can be used to produce an accurate model. __Figure 8__ shows that the best accuracy - roughly 93%, is achieved with 16 variables. Note that the accuracy degrades as more predictors are added to the model. 
 
-It is also worth noting that the 'rfe' function allows the selection process to be performed using numerous cross validation techniques, including leave one out cross validation. However, the function was implemented using 10-fold cross validation, repeated five times. The results were almost identical to those of LOOCV but completed in seconds whie the LOOCV method took over an hour to run.
+It is also worth noting that the 'rfe' function allows the selection process to be performed using numerous cross validation techniques, including leave one out cross validation. However, the function was implemented using 10-fold cross validation, repeated five times. The results were almost identical to those of LOOCV but completed in seconds while the LOOCV method took over an hour to run.
 
 ```{r model_data, include = FALSE}
 
@@ -256,4 +256,4 @@ kable(common_predictors, caption = "Common Predictor Variables", booktabs = TRUE
 
 ```
 
-Since the variable selection techniques did not indicate that the segment designator was significant, the six lung segments will be combined into one data set. This prevents the need of having to run mulitiple models of each type for each lung segment. While it is possible that the data from a particular segment may be more predictive than others, this could vary by model type. If performance from the combined data set is less than adequate then further analysis may be necessary on the individual segments to understand if there is a statistically significant difference between them.
+Since only the low correlation data set included the _Position_ variable, the six lung segments will be modeled as one data set. This prevents the need of having to run mulitiple models of each type for each lung segment. While it is possible that the data from a particular segment may be more predictive than others, this could vary by model type. If performance from the combined data sets is less than adequate then further analysis may be necessary on the individual segments to understand if there is a statistically significant difference between them.

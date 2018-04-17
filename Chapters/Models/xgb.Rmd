@@ -2,9 +2,6 @@
 
 This final model should not be included as a formal submission since it does not use LOOCV. It is included to illustrate the predictive capabilities that are possible.
 
-Gradient Boosting is a machine learning technique that can be used for regression and classification. It works by creating an ensemble of weaker prediction models in a stage-wise fashion then generalizes them through the optimization of an arbitrary differentiable loss function.
-
-
 Gradient boosting is a machine learning technique for regression and classification problems, which produces a prediction model in the form of an ensemble of weak prediction models, typically decision trees. It builds the model in a stage-wise fashion like other boosting methods do, and it generalizes them by allowing optimization of an arbitrary differentiable loss function [@brownlee_2016].
 
 ```{r xgb_model, echo = FALSE}
@@ -153,7 +150,7 @@ xgb.auc <- auc(xgb.ROC)
 
 The AUC in __Figure 18__ of `r xgb.auc` further illustrates how individual metrics can be deceiving. Note how this AUC is less than that seen from the Random Forest model, even though the model is performing much better.
 
-The confusion matrix in __Table 20__ shows that the model incorrectly predicts Pneumoconiosis in 20 patients when the disease is not actually present and fails to predict Pneumoconiosis in only 29 patients when the disease actaully is present.
+The confusion matrix in __Table 20__ shows that the model incorrectly predicts Pneumoconiosis in 15 patients when the disease is not actually present and fails to predict Pneumoconiosis in only 33 patients when the disease actaully is present.
 
 ```{r xgb_table, echo = FALSE}
 
