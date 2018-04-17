@@ -75,7 +75,7 @@ xgbcv$best_iteration
 # first default - model training
 xgb_ht <- xgb.train (params = params
                      ,data = dtrain
-                     ,nrounds = 41
+                     ,nrounds = xgbcv$best_iteration
                      ,watchlist = list(val = dtest, train = dtrain)
                      ,print_every_n = 10
                      ,early_stopping_rounds = 10
@@ -150,7 +150,7 @@ xgb.auc <- auc(xgb.ROC)
 
 The AUC in __Figure 18__ of `r xgb.auc` further illustrates how individual metrics can be deceiving. Note how this AUC is less than that seen from the Random Forest model, even though the model is performing much better.
 
-The confusion matrix in __Table 20__ shows that the model incorrectly predicts Pneumoconiosis in 15 patients when the disease is not actually present and fails to predict Pneumoconiosis in only 33 patients when the disease actaully is present.
+The confusion matrix in __Table 20__ shows that the model incorrectly predicts Pneumoconiosis in 25 patients when the disease is not actually present and fails to predict Pneumoconiosis in only 30 patients when the disease actaully is present.
 
 ```{r xgb_table, echo = FALSE}
 
