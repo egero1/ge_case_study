@@ -1,6 +1,3 @@
-## Eric Gero
-## eric.gero@ge.com
-
 setwd("~/Documents/R_Projects/GE_Case_Study")
 
 # Define functions
@@ -908,43 +905,7 @@ p <- xgb.plot.multi.trees(model = xgb_ht,
                           features_keep = 3)
 print(p)
 
-#####################################################
-names <- names(use_data)
-classes<-sapply(use_data, class)
-for(name in names[classes == 'numeric'])
-{
-        hist(use_data[,name], main = colnames[name]) 
-}
-
-library(ggplot2)
-library(reshape2)
-ggplot(use_data[c(1, 4, 5, 8, 24)], aes(x=value)) + 
-        geom_histogram() + 
-        facet_wrap(~variable)
-
-
-par(mfrow = c(2,2))
-for (i in 1:dim(use_data[c(4, 5, 8, 24)])[2]) {
-        hist(use_data[,i], main = colnames(use_data)[i], xlab = "")
-}
 
 
 
 
-
-library(gridExtra)
-plots <- list(0)
-for (var in 1:39) {
-        p <- ggplot(data = use_data, aes(x = '', y = use_data[,var])) + 
-                geom_boxplot(color='red', fill='orange', alpha = 0.2) +
-                labs(title = paste(colnames(use_data[var]))) +
-                ylab('Boxplot') +
-                xlab('') + 
-                coord_cartesian(ylim = c(min(use_data[,var]), max(use_data[,var])))
-        print(p)
-}
-
-for (var in 1:39) {
-        #grid.arrange(plots[[var]], plots[[var+1]], ncol = 2)
-        print(plots[[v]])
-}
